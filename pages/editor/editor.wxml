@@ -9,16 +9,15 @@
       <button class="nav" size="mini" disabled="{{current <= 0}}" bindtap="onPrev">上一页</button>
       <view class="pager-text">{{label}}<text class="pager-count">  {{current + 1}}/{{total}}</text></view>
       <button class="nav" size="mini" disabled="{{current >= total - 1}}" bindtap="onNext">下一页</button>
+      <view class="guide-toggle {{guides ? 'on' : ''}}" bindtap="onToggleGuides">参考线</view>
     </view>
 
     <!-- 普通状态 -->
     <view wx:if="{{mode === 'normal'}}" class="actions">
-      <view class="guide-switch">
-        <text>参考线</text>
-        <switch checked="{{guides}}" color="#B5835A" bindchange="onToggleGuides" />
-      </view>
-      <button class="btn-secondary info-btn" bindtap="onEditInfo">书籍信息</button>
-      <button class="btn-primary save-btn" disabled="{{saving}}" bindtap="onSave">保存本页</button>
+      <view class="tool" bindtap="onEditInfo">书籍信息</view>
+      <view class="tool" bindtap="onManageSpreads">管理跨页</view>
+      <view class="tool" bindtap="onPreview">预览</view>
+      <view class="tool tool-primary {{saving ? 'disabled' : ''}}" bindtap="onSave">保存本页</view>
     </view>
 
     <!-- 选中照片框 -->

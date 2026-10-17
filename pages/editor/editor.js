@@ -94,8 +94,22 @@ Page({
       })
   },
 
-  // 从书籍信息页返回时重绘，封面和扉页立即更新（首次显示时画布还没准备好，draw 会直接返回）
+  // 从其他页面返回时：重新生成页列表（跨页可能已增删、排序），尽量停留在原来的页，
+  // 跨页管理里点了某个跨页则跳到它；然后重绘，书籍信息的修改也会立即显示
   onShow() {
+    if (!this.pages) return
+    const prev = this.pages[this.data.current]
+    this.pages = getPageList(this.album)
+    let index = -1
+    if (this.pendingJump) {
+      index = this.pages.findIndex(p => p.spreadId === this.pendingJump)
+    } else if (prev) {
+      index = this.pages.findIndex(p => p.spreadId === prev.spreadId && p.side === prev.side)
+    }
+    if (index < 0) index = Math.min(this.data.current, this.pages.length - 1)
+    this.pendingJump = null
+    this.selectedFrameId = null
+    this.setData({ current: index, total: this.pages.length, label: this.pages[index].label, mode: 'normal' })
     this.draw()
   },
 
@@ -336,9 +350,22 @@ Page({
 
   // ---------- 其他 ----------
 
-  onToggleGuides(e) {
-    this.setData({ guides: e.detail.value })
-    this.drawNow()
+  onToggleGuides() {
+    this.setData({ guides: !this.data.guides }, () => this.drawNow())
+  },
+
+  onManageSpreads() {
+    wx.navigateTo({
+      url: '/pages/spreads/spreads',
+      events: {
+        jump: ({ spreadId }) => { this.pendingJump = spreadId }
+      }
+    })
+  },
+
+  onPreview() {
+    const page = this.pages[this.data.current]
+    wx.navigateTo({ url: `/pages/preview/preview?spreadId=${page.spreadId}` })
   },
 
   onEditInfo() {

@@ -115,4 +115,4 @@ async function saveToPhotosAlbum(filePath) {
   }
 }
 
-module.exports = { renderPageToFile, saveToPhotosAlbum, removeExportFile }
+module.exports = { renderPageToFile, exportCanvas, saveToPhotosAlbum, removeExportFile }

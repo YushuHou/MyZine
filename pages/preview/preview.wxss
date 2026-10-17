@@ -1,0 +1,46 @@
+/** 双页预览 **/
+page {
+  height: 100%;
+  background: #3A3835;
+}
+.page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.swiper {
+  width: 100%;
+}
+.slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.spread {
+  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.35);
+}
+.spread-img {
+  width: 100%;
+  height: 100%;
+}
+.loading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 26rpx;
+}
+.label {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+.counter {
+  margin-top: 40rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.5);
+}

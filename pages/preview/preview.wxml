@@ -1,0 +1,15 @@
+<!-- 双页预览 -->
+<view class="page">
+  <swiper class="swiper" current="{{current}}" bindchange="onChange" style="height: {{imgH + 56}}px;">
+    <swiper-item wx:for="{{items}}" wx:key="id">
+      <view class="slide">
+        <view class="spread" style="width: {{imgW}}px; height: {{imgH}}px;">
+          <image wx:if="{{item.src}}" class="spread-img" src="{{item.src}}" />
+          <view wx:else class="loading">生成中…</view>
+        </view>
+        <view class="label">{{item.label}}</view>
+      </view>
+    </swiper-item>
+  </swiper>
+  <view class="counter">{{current + 1}} / {{items.length}} · 左右滑动翻页</view>
+</view>

@@ -18,6 +18,13 @@ function needsTransform(image, exif, ratio) {
   return !platformAutoRotates
 }
 
+// 各变体使用的文件：display 压缩图 | original 原图（打印版导出）| thumb 小缩略图（跨页缩略图）
+function pathOf(photo, variant) {
+  if (variant === 'original') return photo.originalPath
+  if (variant === 'thumb') return photo.thumbPath || photo.displayPath
+  return photo.displayPath
+}
+
 function createImageLoader(canvas) {
   // path → { promise, image }
   const cache = {}
@@ -50,11 +57,10 @@ function createImageLoader(canvas) {
     }
   }
 
-  // variant：'display' 用压缩图，'original' 用原图（打印版导出）
   async function loadPhoto(photo, variant) {
-    const useOriginal = variant === 'original'
-    const path = useOriginal ? photo.originalPath : photo.displayPath
-    const exif = (useOriginal ? photo.exif : photo.displayExif) || 'up'
+    const path = pathOf(photo, variant)
+    // 缩略图由压缩图生成，沿用压缩图的 EXIF 方向；90° 类方向仍会按宽高比自动检测
+    const exif = (variant === 'original' ? photo.exif : photo.displayExif) || 'up'
     const image = await loadImage(path)
     if (!image) return null
     return { image, exif, transform: needsTransform(image, exif, photo.ratio) }
@@ -73,7 +79,7 @@ function createImageLoader(canvas) {
       }))
       if (options.evictOthers) {
         const keep = {}
-        photos.forEach(p => { keep[variant === 'original' ? p.originalPath : p.displayPath] = true })
+        photos.forEach(p => { keep[pathOf(p, variant)] = true })
         Object.keys(cache).forEach(path => { if (!keep[path]) release(path) })
       }
       return map

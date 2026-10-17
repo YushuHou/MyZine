@@ -25,8 +25,8 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   const unit = (page.side === 'full' ? W / 2 : W) / C.PAGE_WIDTH
   const layoutPage = getLayoutPage(layout, page.side)
 
+  // 不重置画布变换：调用方可以先平移，把左右页画到同一张画布上（见 renderSpread）
   ctx.save()
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, W, H)
   drawBackground(ctx, style, W, H)
   // 版式指定的整页底色（如环衬），取风格中的同名颜色

@@ -115,6 +115,23 @@ function getPageList(album) {
   return pages
 }
 
+/**
+ * 每个跨页的显示名称：封面 / 扉页 / P1–P2 / 封底（跨页管理、预览使用）
+ * @returns { spreadId: label }
+ */
+function getSpreadLabels(album) {
+  const groups = {}
+  getPageList(album).forEach(page => {
+    (groups[page.spreadId] = groups[page.spreadId] || []).push(page)
+  })
+  const labels = {}
+  album.spreads.forEach(spread => {
+    const pages = groups[spread.id] || []
+    labels[spread.id] = spread.pageType === 'title' ? '扉页' : pages.map(p => p.label).join('–')
+  })
+  return labels
+}
+
 module.exports = {
   newId,
   createAlbum,
@@ -128,5 +145,6 @@ module.exports = {
   getSpread,
   getSpreadStyle,
   getSpreadPhotos,
-  getPageList
+  getPageList,
+  getSpreadLabels
 }
