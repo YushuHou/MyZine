@@ -1,10 +1,10 @@
 // 模板（风格）选择：分「纯色 / 风格 / 主题」三组，可按主题筛选，示例用用户自己的照片渲染
 // 纯色组用色块小圆点快速切换（只渲染当前选中颜色的一张示例），其余每个风格一张示例跨页
 // mode：first 第一次开始制作（选定后生成整本书进入编辑）
-//       change 更换主模板
-//       spread 给某个跨页单独换风格（多一个「跟随主模板」选项）
+//       change 更换主模板（首页的「模板」卡片）
+// 编辑中给整本书或单独两页换风格用编辑页的模板面板（components/style-sheet）
 const app = getApp()
-const { listStyles, getStyle, getLayout, getLayoutFrames } = require('../../core/registry')
+const { listStyles, getLayout, getLayoutFrames } = require('../../core/registry')
 const { createSpread, createSlot } = require('../../core/album')
 const { buildBook } = require('../../core/book')
 const { createSpreadImageRenderer } = require('../../core/render/spreadImages')
@@ -13,8 +13,6 @@ const UI_COLORS = require('../../core/uiColors')
 
 // 示例跨页的版式：左页标题 + 小图、右页大横图，能看到大标题、页眉、线稿、边框等风格特征
 const SAMPLE_LAYOUT = 'b-H1L-L1'
-// 「跟随主模板」选项的 id
-const FOLLOW = 'follow'
 
 const themeName = {}
 THEMES.forEach(t => { themeName[t.key] = t.name })
@@ -39,8 +37,7 @@ Page({
     styleCards: [],
     themeCards: [],
     visibleStyleCards: [],
-    visibleThemeCards: [],
-    followCard: null
+    visibleThemeCards: []
   },
 
   onLoad(query) {
@@ -50,8 +47,6 @@ Page({
       return
     }
     this.mode = query.mode || 'change'
-    this.spread = query.spreadId ? this.album.spreads.find(s => s.id === query.spreadId) : null
-    wx.setNavigationBarTitle({ title: this.mode === 'spread' ? '本跨页的风格' : '选择模板' })
 
     const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     this.renderer = createSpreadImageRenderer({
@@ -65,10 +60,8 @@ Page({
     const styles = listStyles()
     const toCard = s => ({ id: s.id, name: s.name, description: s.description || '', themesText: themesText(s), tags: s.tags || [], preview: '' })
     const solids = styles.filter(s => s.group === 'solid').map(s => ({ id: s.id, name: s.name, swatch: s.swatch || s.colors.background, description: s.description || '', tags: s.tags || [] }))
-    const currentId = this.mode === 'spread' ? (this.spread.styleId || FOLLOW) : this.album.defaultStyleId
-    const current = getStyle(currentId === FOLLOW ? this.album.defaultStyleId : currentId)
-    const focus = solids.find(s => s.id === current.id) || solids[0]
-    const main = getStyle(this.album.defaultStyleId)
+    const currentId = this.album.defaultStyleId
+    const focus = solids.find(s => s.id === currentId) || solids[0]
 
     this.setData({
       mode: this.mode,
@@ -76,10 +69,7 @@ Page({
       solids,
       focusSolid: focus,
       styleCards: styles.filter(s => s.group === 'style').map(toCard),
-      themeCards: styles.filter(s => s.group === 'theme').map(toCard),
-      followCard: this.mode === 'spread'
-        ? { id: FOLLOW, name: `跟随主模板（${main.name}）`, description: '主模板更换时，这个跨页跟着变', preview: '' }
-        : null
+      themeCards: styles.filter(s => s.group === 'theme').map(toCard)
     }, () => this.applyFilter())
     this.renderAll()
   },
@@ -88,9 +78,8 @@ Page({
     if (this.renderer) this.renderer.clear()
   },
 
-  // 示例跨页：换单个跨页的风格时用它自己；否则用前几张照片填一个示例版式
+  // 示例跨页：用前几张照片填一个示例版式
   sampleSpread() {
-    if (this.mode === 'spread' && this.spread) return this.spread
     const slots = {}
     getLayoutFrames(getLayout(SAMPLE_LAYOUT)).forEach((frame, i) => {
       const photo = this.album.photos[i]
@@ -103,7 +92,7 @@ Page({
   renderPreview(styleId) {
     const spread = Object.assign({}, this.sample, {
       id: `tpl_${styleId}`,
-      styleId: styleId === FOLLOW ? null : styleId,
+      styleId,
       inverted: false
     })
     return this.renderer.render(this.album, spread)
@@ -112,12 +101,12 @@ Page({
   // 先渲染当前纯色，再逐个渲染风格组、主题组
   async renderAll() {
     await this.renderSolidPreview()
-    const lists = [['followCard', this.data.followCard ? [this.data.followCard] : []], ['styleCards', this.data.styleCards], ['themeCards', this.data.themeCards]]
+    const lists = [['styleCards', this.data.styleCards], ['themeCards', this.data.themeCards]]
     for (const [key, cards] of lists) {
       for (let i = 0; i < cards.length; i++) {
         try {
           const path = await this.renderPreview(cards[i].id)
-          this.setData({ [key === 'followCard' ? 'followCard.preview' : `${key}[${i}].preview`]: path }, () => this.applyFilter())
+          this.setData({ [`${key}[${i}].preview`]: path }, () => this.applyFilter())
         } catch (err) {
           console.warn('生成模板示例失败', err)
         }
@@ -178,11 +167,6 @@ Page({
   },
 
   select(id) {
-    if (this.mode === 'spread') {
-      this.spread.styleId = id === FOLLOW ? null : id
-      wx.navigateBack()
-      return
-    }
     this.album.defaultStyleId = id
     if (this.mode === 'first') this.startBook()
     else wx.navigateBack()

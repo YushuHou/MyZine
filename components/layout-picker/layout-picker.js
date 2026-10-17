@@ -36,10 +36,10 @@ Component({
       const map = {}
       layouts.forEach(l => {
         const item = toPreview(l)
-        const key = item.spread ? '跨页大图' : item.count >= 4 ? '4 张及以上' : `${item.count} 张`
+        const key = item.spread ? '双页大图' : item.count >= 4 ? '4 张及以上' : `${item.count} 张`
         ;(map[key] = map[key] || []).push(item)
       })
-      const order = ['1 张', '2 张', '3 张', '4 张及以上', '跨页大图']
+      const order = ['1 张', '2 张', '3 张', '4 张及以上', '双页大图']
       this.setData({ groups: order.filter(k => map[k]).map(k => ({ title: k, items: map[k] })) })
     }
   },

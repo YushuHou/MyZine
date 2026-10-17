@@ -1,6 +1,6 @@
 <!-- 模板选择：纯色 / 风格 / 主题 -->
 <view class="page">
-  <view wx:if="{{mode === 'first'}}" class="tip">选一套风格作为整本书的主模板（示例用你的照片）。之后可在「管理跨页」中更换，也可以给单个跨页换风格</view>
+  <view wx:if="{{mode === 'first'}}" class="tip">选一套风格作为整本书的主模板（示例用你的照片）。之后可在编辑页的「模板」中更换整本书或单独两页的风格</view>
 
   <view class="filters">
     <view class="filter {{filter === 'all' ? 'active' : ''}}" data-filter="all" bindtap="onFilter">全部</view>
@@ -8,18 +8,6 @@
   </view>
   <view wx:if="{{filter === 'theme'}}" class="themes">
     <view wx:for="{{themes}}" wx:key="key" class="theme {{theme === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="onTheme">{{item.name}}</view>
-  </view>
-
-  <!-- 跟随主模板（单个跨页换风格时） -->
-  <view wx:if="{{followCard}}" class="card {{currentId === followCard.id ? 'current' : ''}}" data-id="{{followCard.id}}" bindtap="onSelect">
-    <view class="preview">
-      <image wx:if="{{followCard.preview}}" class="preview-img" src="{{followCard.preview}}" mode="aspectFit" />
-      <view wx:else class="loading">生成示例中…</view>
-    </view>
-    <view class="card-main">
-      <view class="card-title"><text class="name">{{followCard.name}}</text><text wx:if="{{currentId === followCard.id}}" class="badge">当前</text></view>
-      <view class="desc">{{followCard.description}}</view>
-    </view>
   </view>
 
   <!-- 纯色：色块小圆点切换 -->

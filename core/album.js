@@ -138,7 +138,7 @@ function pageLabel(pageType, side) {
 /**
  * 把相册展开为逐页列表（编辑页一屏一页、导出逐页渲染都基于它，不存储）
  * side：left / right 为左右页；full 为跨页大图（一张 2160×1440）；single 为封面、封底等单页
- * label：封面 / 环衬 / 扉页 / P1… / 封底，正文按正文页单独编号，跨页大图算两页
+ * label：封面 / 环衬 / 扉页 / P1… / 封底，正文按正文页单独编号，跨页大图算两页（P3–P4）
  * pageNumbers：正文页印在页面上的页码，单页 [3]，跨页大图 [3, 4]；非正文页为 []
  * frameNumbers：正文照片编号 { frameId: n }，整本书连续（有照片的框才编号）
  * word：跨页的装饰词（来自风格 wordPool）。只有版式里真有 {word} 文字槽的跨页才占用一个词；
@@ -163,7 +163,7 @@ function getPageList(album) {
       let label = pageLabel(spread.pageType, side)
       let pageNumbers = []
       if (!label) {
-        label = side === 'full' ? `P${bodyNo + 1}-${bodyNo + 2}` : `P${bodyNo + 1}`
+        label = side === 'full' ? `P${bodyNo + 1}–P${bodyNo + 2}` : `P${bodyNo + 1}`
         pageNumbers = side === 'full' ? [bodyNo + 1, bodyNo + 2] : [bodyNo + 1]
         bodyNo += pageNumbers.length
       }

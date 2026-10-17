@@ -8,91 +8,122 @@ page {
   flex-direction: column;
 }
 
-.stage {
-  flex: 1;
+/* 顶部栏：参考线开关 + 导出 */
+.topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72rpx;
+  padding: 0 24rpx;
+}
+.guide-toggle {
+  width: 56rpx;
+  height: 56rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 0 0;
+  border-radius: var(--radius-btn);
+  opacity: 0.55;
+}
+.guide-toggle.on {
+  background: var(--color-brand);
+  opacity: 1;
+}
+.guide-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+/* 导出：全页唯一的实心按钮 */
+.export-btn {
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 28rpx;
+  font-size: 26rpx;
+  border-radius: var(--radius-btn);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+
+/* 画布区：占满剩余高度（画布尺寸按它的实际高度计算） */
+.stage {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .page-canvas {
   box-shadow: var(--shadow-book);
 }
 
-.toolbar {
-  padding: 16rpx 32rpx calc(16rpx + env(safe-area-inset-bottom));
-}
+/* 翻页行 */
 .pager {
-  position: relative;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 32rpx;
+  height: 80rpx;
 }
-.nav {
-  margin: 0 !important;
-  font-size: 26rpx !important;
-}
-/* 当前页标签：柯达黄 */
-.pager-text {
-  min-width: 160rpx;
-  padding: 6rpx 20rpx;
-  text-align: center;
-  font-weight: 600;
-  border-radius: var(--radius-btn);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-}
-
-/* 固定高度：切换操作栏时画布位置不变 */
-.actions {
+.arrow {
+  width: 88rpx;
+  height: 80rpx;
   display: flex;
   align-items: center;
-  gap: 20rpx;
-  height: 88rpx;
-  margin-top: 16rpx;
+  justify-content: center;
 }
-/* 参考线开关：页码行右侧 */
-.guide-toggle {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 6rpx 16rpx;
-  border-radius: var(--radius-btn);
-  font-size: 22rpx;
-  color: var(--color-text-2);
-  border: 2rpx solid var(--color-text-3);
+.arrow.off {
+  opacity: 0.25;
 }
-.guide-toggle.on {
-  color: var(--color-on-brand);
-  background: var(--color-brand);
-  border-color: var(--color-brand);
+.arrow-icon {
+  width: 40rpx;
+  height: 40rpx;
 }
-
-/* 照片框操作按钮 */
-.tool {
-  flex: 1;
-  height: 76rpx;
-  line-height: 76rpx;
+.pager-text {
+  min-width: 180rpx;
   text-align: center;
-  font-size: 28rpx;
-  border-radius: var(--radius-btn);
-  border: 2rpx solid var(--color-text);
-  box-sizing: border-box;
+  font-size: 30rpx;
   color: var(--color-text);
 }
-.tool.disabled {
-  color: var(--color-text-3);
-  border-color: var(--color-text-3);
+
+/* 底部标签栏 */
+.tabbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 112rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1rpx solid var(--color-line);
 }
-.tool-primary {
-  background: var(--color-brand);
-  border-color: var(--color-brand);
-  color: var(--color-on-brand);
+.tab {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-.hint {
+.tab.off {
+  opacity: 0.3;
+}
+.tab-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+.tab-text {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--color-text-2);
+}
+/* 完成：靛蓝图标和文字，比其他项醒目，但不是实心按钮 */
+.tab-brand .tab-text {
+  color: var(--color-brand);
+  font-weight: 600;
+}
+.tab-hint {
   flex: 2;
+  text-align: center;
   font-size: 26rpx;
   color: var(--color-text-2);
 }

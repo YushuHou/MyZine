@@ -2,21 +2,6 @@
 .page {
   padding: 24rpx 32rpx calc(180rpx + env(safe-area-inset-bottom));
 }
-/* 主模板 */
-.template-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20rpx;
-  padding: 24rpx 28rpx;
-  font-size: 28rpx;
-  background: var(--color-surface);
-  border-radius: var(--radius-card);
-}
-.template-change {
-  color: var(--color-brand);
-}
-
 .tip {
   margin-bottom: 20rpx;
   font-size: 26rpx;

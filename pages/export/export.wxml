@@ -35,7 +35,7 @@
     <view class="card-title">保存为图片</view>
     <view class="modes">
       <view class="mode {{imageMode === 'page' ? 'active' : ''}}" data-mode="page" bindtap="onImageMode">单页 1080×1440</view>
-      <view class="mode {{imageMode === 'spread' ? 'active' : ''}}" data-mode="spread" bindtap="onImageMode">跨页 2160×1440</view>
+      <view class="mode {{imageMode === 'spread' ? 'active' : ''}}" data-mode="spread" bindtap="onImageMode">双页 2160×1440</view>
     </view>
     <view wx:if="{{imageMode === 'spread'}}" class="hint">封面、封底按单页保存</view>
     <view class="chips">

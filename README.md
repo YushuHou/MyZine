@@ -13,14 +13,18 @@ app.js / app.json / app.wxss       入口；app.globalData.album 是当前相册
 pages/
   index/        首页：书籍信息卡片、导入照片、拖动排序、开始制作 / 继续编辑 / 重新排版
   info/         书籍信息：书名、作者、同游人、地点、起止日期、想说的话
-  templates/    模板选择：纯色（色块切换）/ 风格 / 主题三组，按主题筛选；用自己的照片渲染示例
-  editor/       编辑：一屏一页；点照片框选中 → 换照片 / 拖动缩放 / 填满完整切换
-  spreads/      跨页管理：缩略图列表、拖动排序、插入 / 换版式 / 换风格 / 删除，更换主模板
+  templates/    模板选择（第一次开始制作、首页「模板」卡片）：纯色 / 风格 / 主题三组，按主题筛选
+  editor/       编辑：顶部栏（参考线、导出）→ 画布（左右滑动翻页）→ 翻页行 → 标签栏（书籍信息 / 页面 / 模板 / 预览）；
+                点照片框选中 → 换照片 / 拖动缩放 / 填满完整切换
+  spreads/      「页面」：缩略图列表、拖动排序、插入 / 换版式 / 删除（风格在模板面板里换）
   preview/      立体翻书预览（flip.wxs 处理拖动翻页）
   export/       导出：PDF（分享版 / 打印版）、保存图片（单页 / 跨页）
 components/
   photo-picker/ 照片选择面板（页码标签、全部 / 未使用、当前高亮）
   layout-picker/版式选择面板（按张数分组、示意图）
+  style-sheet/  模板面板（编辑页底部弹出）：只换当前两页 / 换整本书，真实照片缩略图按需渲染
+assets/
+  icons/        界面图标（SVG 细线图标，24×24、线宽 1.6），颜色写在文件里，见下方「界面配色」
 core/                               逻辑层（不依赖页面）
   album.js      相册数据、页列表 getPageList（页名、页码、照片编号、装饰词）、反色跨页样式
   photos.js     导入：chooseMedia → getImageInfo（EXIF 校正）→ 压缩图 + 缩略图 → 横 / 竖 / 方
@@ -66,6 +70,15 @@ scripts/        build-glyphs.py（生成字形数据，不进小程序包）
 licenses/fonts/ OFL 授权全文（不进小程序包）
 docs/           需求文档、阶段方案（不进小程序包）
 ```
+
+### 界面配色
+
+- 界面颜色都是 `app.wxss` 中 `page` 上的 CSS 变量（暗房灰卡：背景 `#EBEBE8`、浮层 `#F6F6F4`、主文字 `#1E1F22`、次要文字 `#6B6E73`、靛蓝 `#2C3E66`、柯达黄 `#F5B800`、黄底文字 `#1B1B1B`、书页缩略图下的桌面 `#CDCDC8`）。
+- 读不到 CSS 变量的地方要同步修改：
+  - `core/uiColors.js`：画布上的选中框、缩略图空白半边、翻书舞台、删除按钮。
+  - `app.json`、`pages/preview/preview.json`：导航栏颜色。
+  - `assets/icons/*.svg`：图标线条颜色。大部分是主文字色 `#1E1F22`；`guides-on.svg` 是白色 `#FFFFFF`（叠在靛蓝底上）；`check-brand.svg` 是靛蓝 `#2C3E66`（「完成」）。
+- 照片书模板本身的配色在 `templates/styles/`，和界面配色无关。
 
 ## 2. 渲染流程
 

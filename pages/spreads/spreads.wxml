@@ -1,11 +1,7 @@
-<!-- 跨页管理 -->
+<!-- 页面管理（原跨页管理） -->
 <wxs src="../../core/ui/sortable.wxs" module="sortable" />
 <view class="page">
-  <view class="template-bar" bindtap="onChangeTemplate">
-    <text>主模板：{{styleName}}</text>
-    <text class="template-change">更换 ›</text>
-  </view>
-  <view class="tip">点击跨页回到编辑 · 长按正文跨页拖动排序</view>
+  <view class="tip">点击回到编辑 · 长按正文页面拖动排序</view>
 
   <!-- 封面、扉页：固定 -->
   <view wx:for="{{headItems}}" wx:key="id" class="row" style="height: {{rowH}}px;" data-id="{{item.id}}" bindtap="onOpen">
@@ -40,7 +36,7 @@
       <view class="more" data-id="{{item.id}}" catchtap="onMore">⋯</view>
     </view>
   </view>
-  <view wx:if="{{!items.length}}" class="empty">还没有正文跨页，点下方「添加跨页」</view>
+  <view wx:if="{{!items.length}}" class="empty">还没有正文页面，点下方「添加页面」</view>
 
   <!-- 封底：固定 -->
   <view wx:for="{{tailItems}}" wx:key="id" class="row" style="height: {{rowH}}px;" data-id="{{item.id}}" bindtap="onOpen">
@@ -53,7 +49,7 @@
   </view>
 
   <view class="footer">
-    <button class="btn-primary" bindtap="onAdd">添加跨页</button>
+    <button class="btn-primary" bindtap="onAdd">添加页面</button>
   </view>
 
   <layout-picker

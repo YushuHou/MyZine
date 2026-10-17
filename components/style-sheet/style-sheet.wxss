@@ -1,0 +1,148 @@
+/* 模板面板 */
+.sheet-wrap {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+}
+.mask {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-mask);
+}
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx 12rpx;
+}
+/* 分段切换：选中项靛蓝底白字 */
+.tabs {
+  display: flex;
+  gap: 16rpx;
+}
+.tab {
+  min-width: 140rpx;
+  padding: 12rpx 28rpx;
+  text-align: center;
+  font-size: 28rpx;
+  border-radius: var(--radius-btn);
+  border: 2rpx solid var(--color-line);
+  color: var(--color-text-2);
+}
+.tab.active {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: var(--color-on-brand);
+}
+.close {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 60rpx;
+  text-align: center;
+  font-size: 48rpx;
+  color: var(--color-text-2);
+}
+.hint {
+  padding: 0 32rpx 12rpx;
+  font-size: 24rpx;
+  color: var(--color-text-2);
+}
+.follow {
+  margin: 0 32rpx 12rpx;
+  font-size: 26rpx;
+  color: var(--color-brand);
+}
+
+.body {
+  flex: 1;
+  height: 0;
+}
+.group {
+  padding: 0 32rpx 24rpx;
+}
+.group-title {
+  margin: 12rpx 0 16rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--color-text-2);
+}
+.grid {
+  display: grid;
+  gap: 24rpx 20rpx;
+}
+/* 「P3–P4」：每行两个风格；「整本书」：每行一个风格，封面 + 正文两张并排 */
+.grid-spread {
+  grid-template-columns: repeat(2, 1fr);
+}
+.grid-book {
+  grid-template-columns: 1fr;
+}
+
+.thumbs {
+  display: flex;
+  gap: 12rpx;
+  padding: 10rpx;
+  background: var(--color-desk);
+  border-radius: 4rpx;
+}
+/* 当前风格：柯达黄边框 */
+.card.current .thumbs {
+  box-shadow: 0 0 0 4rpx var(--color-accent);
+}
+.thumb {
+  position: relative;
+  flex: 1;
+  padding-top: 33.33%;
+}
+.grid-spread .thumb {
+  padding-top: 66.67%;
+}
+.thumb-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: var(--shadow-book);
+}
+.name {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: var(--color-text);
+}
+.badge {
+  padding: 0 10rpx;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  border-radius: 4rpx;
+}
+.badge-current {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.badge-main {
+  border: 1rpx solid var(--color-text-2);
+  color: var(--color-text-2);
+}

@@ -1,6 +1,9 @@
 // 编辑页：一屏显示一页；点照片框选中后可换照片、调整位置和缩放、切换填满/完整
+// 布局：顶部栏（参考线 + 导出）→ 画布 → 翻页行 → 底部标签栏（书籍信息 / 页面 / 模板 / 预览）
 const app = getApp()
-const { getPageList, getSpread, getSpreadPhotos, getSpreadStyle, getPhoto, setSlotPhoto } = require('../../core/album')
+const { getPageList, getSpread, getSpreadPhotos, getSpreadStyle, getPhoto, setSlotPhoto, getSpreadLabels } = require('../../core/album')
+const { createSpreadImageRenderer } = require('../../core/render/spreadImages')
+const UI_COLORS = require('../../core/uiColors')
 const { getLayout, getLayoutPage } = require('../../core/registry')
 const { renderPage } = require('../../core/render/renderPage')
 const { createImageLoader } = require('../../core/render/imageLoader')
@@ -11,8 +14,11 @@ const { loadRenderImages } = require('../../core/styleAssets')
 const C = require('../../core/constants')
 const { getPhotoUsage, formatUsage } = require('../../core/usage')
 
-// 底部工具栏预留高度（px）
-const TOOLBAR_HEIGHT = 170
+// 画布区以外（顶部栏 + 翻页行 + 底部标签栏）的估计高度（px），量到画布区实际高度之前先用它
+const CHROME_ESTIMATE = 136
+// 画布四周留白（px）
+const STAGE_PAD_X = 16
+const STAGE_PAD_Y = 8
 // 左右滑动翻页的最小距离（px）
 const SWIPE_DISTANCE = 50
 // 手指移动不超过这个距离算点击（px）
@@ -24,11 +30,17 @@ function getWindowInfo() {
   return wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
 }
 
-// 画布显示尺寸：单页 3:4，跨页大图 3:2，在可用区域内尽量大
-function computeCanvasSize(info, side) {
+// 画布区的估计尺寸：窗口减去上下栏和底部安全区
+function estimateStage(info) {
+  const safeBottom = info.safeArea ? Math.max(0, info.screenHeight - info.safeArea.bottom) : 0
+  return { w: info.windowWidth, h: info.windowHeight - CHROME_ESTIMATE - safeBottom }
+}
+
+// 画布显示尺寸：单页 3:4，跨页大图 3:2，在画布区内尽量大
+function computeCanvasSize(stage, side) {
   const ratio = side === 'full' ? 2 / 3 : 4 / 3
-  const maxW = info.windowWidth - 32
-  const maxH = info.windowHeight - TOOLBAR_HEIGHT
+  const maxW = stage.w - STAGE_PAD_X * 2
+  const maxH = stage.h - STAGE_PAD_Y * 2
   let w = maxW
   let h = w * ratio
   if (h > maxH) {
@@ -73,7 +85,8 @@ Page({
     }
     this.pages = getPageList(this.album)
     this.windowInfo = getWindowInfo()
-    const size = computeCanvasSize(this.windowInfo, this.pages[0].side)
+    this.stageSize = estimateStage(this.windowInfo)
+    const size = computeCanvasSize(this.stageSize, this.pages[0].side)
     this.setData({ canvasW: size.w, canvasH: size.h, total: this.pages.length, label: this.pages[0].label })
   },
 
@@ -86,17 +99,20 @@ Page({
       this.setData({ saveNotice: true })
       this.noticeTimer = setTimeout(() => this.setData({ saveNotice: false }), 5000)
     }
+    // 量出画布区的实际尺寸，按它重新计算画布大小后再绘制
     wx.createSelectorQuery()
-      .select('#pageCanvas')
-      .fields({ node: true, size: true, rect: true })
+      .select('#stage').boundingClientRect()
+      .select('#pageCanvas').fields({ node: true, size: true, rect: true })
       .exec(res => {
-        const info = res[0]
+        const stage = res[0]
+        const info = res[1]
         if (!info || !info.node) return
+        if (stage && stage.height > 0) this.stageSize = { w: stage.width, h: stage.height }
         this.canvas = info.node
         this.ctx = this.canvas.getContext('2d')
         this.loader = createImageLoader(this.canvas)
         this.applyCanvasPixels(info)
-        this.draw()
+        this.updateCanvasSize(() => this.draw())
       })
   },
 
@@ -110,7 +126,7 @@ Page({
 
   // 单页（3:4）和跨页大图（3:2）之间切换时调整画布尺寸，调整完再绘制
   updateCanvasSize(callback) {
-    const size = computeCanvasSize(this.windowInfo, this.pages[this.data.current].side)
+    const size = computeCanvasSize(this.stageSize, this.pages[this.data.current].side)
     if (!this.canvas || (size.w === this.data.canvasW && size.h === this.data.canvasH)) {
       callback()
       return
@@ -152,6 +168,7 @@ Page({
   onUnload() {
     clearTimeout(this.noticeTimer)
     if (this.loader) this.loader.clear()
+    if (this.styleRenderer) this.styleRenderer.clear()
   },
 
   // ---------- 当前页 ----------
@@ -401,7 +418,8 @@ Page({
     this.setData({ guides: !this.data.guides }, () => this.drawNow())
   },
 
-  onManageSpreads() {
+  // 页面：调整顺序、增删、换版式（原「管理跨页」，不含风格）
+  onManagePages() {
     wx.navigateTo({
       url: '/pages/spreads/spreads',
       events: {
@@ -428,5 +446,41 @@ Page({
 
   onEditInfo() {
     wx.navigateTo({ url: '/pages/info/info' })
+  },
+
+  // ---------- 模板面板 ----------
+
+  // 打开模板面板：缩略图渲染器由编辑页持有，关掉面板再打开时已渲染的缩略图还在
+  onOpenStyles() {
+    const { spread } = this.getCurrent()
+    if (!this.styleRenderer) {
+      this.styleRenderer = createSpreadImageRenderer({ width: 360, variant: 'thumb', blankColor: UI_COLORS.desk, spine: true, quality: 0.8 })
+    }
+    this.selectComponent('#styleSheet').open({
+      album: this.album,
+      spread,
+      label: getSpreadLabels(this.album)[spread.id],
+      renderer: this.styleRenderer
+    })
+  },
+
+  /**
+   * 应用风格：scope = spread（只换这一对页面；选中主模板或「恢复跟随」时改回跟随整本书）| book（换主模板）
+   */
+  onStyleApply(e) {
+    const { scope, styleId, spreadId, label } = e.detail
+    if (scope === 'book') {
+      this.album.defaultStyleId = styleId
+    } else {
+      const spread = getSpread(this.album, spreadId)
+      if (!spread) return
+      spread.styleId = !styleId || styleId === this.album.defaultStyleId ? null : styleId
+    }
+    wx.showToast({ title: scope === 'book' ? '已应用到整本书' : `已应用到 ${label}`, icon: 'none' })
+    // 风格变了，装饰词等也会变：重新生成页列表后重绘
+    this.pages = getPageList(this.album)
+    this.selectedFrameId = null
+    this.setData({ mode: 'normal', label: this.pages[this.data.current].label })
+    this.draw()
   }
 })

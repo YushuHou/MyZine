@@ -1,0 +1,42 @@
+<!-- 模板面板 -->
+<view wx:if="{{show}}" class="sheet-wrap">
+  <view class="mask" bindtap="close" catchtouchmove="noop"></view>
+  <view class="sheet">
+    <view class="header" catchtouchmove="noop">
+      <view class="tabs">
+        <view class="tab {{tab === 'spread' ? 'active' : ''}}" data-tab="spread" bindtap="onTab">{{spreadLabel}}</view>
+        <view class="tab {{tab === 'book' ? 'active' : ''}}" data-tab="book" bindtap="onTab">整本书</view>
+      </view>
+      <view class="close" bindtap="close">×</view>
+    </view>
+    <view class="hint">{{tab === 'spread' ? '只换「' + spreadLabel + '」的风格' : '换整本书的主模板，单独换过风格的页面保持不变'}}</view>
+    <view wx:if="{{follow}}" class="follow" bindtap="onFollow">恢复跟随整本书（{{follow.name}}）›</view>
+
+    <scroll-view scroll-y class="body" scroll-into-view="{{scrollTo}}">
+      <view wx:for="{{groups}}" wx:for-item="group" wx:key="key" class="group">
+        <view class="group-title">{{group.title}}</view>
+        <view class="grid grid-{{tab}}">
+          <view
+            wx:for="{{group.cards}}"
+            wx:key="id"
+            id="card-{{item.id}}"
+            class="card {{item.current ? 'current' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onPick"
+          >
+            <view class="thumbs">
+              <view wx:for="{{item.thumbs}}" wx:for-item="thumb" wx:for-index="k" class="thumb">
+                <image wx:if="{{thumb}}" class="thumb-img" src="{{thumb}}" mode="aspectFit" />
+              </view>
+            </view>
+            <view class="name">
+              <text>{{item.name}}</text>
+              <text wx:if="{{item.current}}" class="badge badge-current">当前</text>
+              <text wx:if="{{item.main}}" class="badge badge-main">整本书</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

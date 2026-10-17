@@ -1,4 +1,5 @@
-// 跨页管理：缩略图列表；正文跨页可拖动排序、插入、换版式、删除；封面、扉页、封底固定
+// 页面管理（界面上叫「页面」，原「管理跨页」）：缩略图列表；正文跨页可拖动排序、插入、换版式、删除；封面、扉页、封底固定
+// 风格相关的操作都在编辑页的「模板」面板里，这里不再有
 const app = getApp()
 const { getSpreadLabels } = require('../../core/album')
 const { getLayout, getLayoutFrames, listLayouts, getStyle } = require('../../core/registry')
@@ -18,7 +19,6 @@ Page({
     items: [],
     tailItems: [],
     rowH: 0,
-    styleName: '',
     gridHeight: 0,
     dragIndex: -1,
     // 版式选择面板
@@ -36,7 +36,7 @@ Page({
     this.setData({ bodyLayouts: listLayouts('body') })
   },
 
-  // 每次显示都刷新：从模板页返回时风格可能已变
+  // 每次显示都刷新
   onShow() {
     this.refresh()
   },
@@ -84,7 +84,6 @@ Page({
       items: parts.body.map((s, i) => Object.assign(this.toItem(s, labels), { y: this.grid.position(i).y })),
       tailItems: parts.tail.map(s => this.toItem(s, labels)),
       rowH: this.grid.cellH,
-      styleName: getStyle(this.album.defaultStyleId).name,
       gridHeight: this.grid.height(parts.body.length),
       dragIndex: -1
     })
@@ -126,7 +125,7 @@ Page({
   },
 
   async onAdd() {
-    const layoutId = await this.chooseLayout('添加跨页：选择版式')
+    const layoutId = await this.chooseLayout('添加页面：选择版式')
     if (!layoutId) return
     insertBodySpread(this.album, layoutId)
     this.refresh()
@@ -136,18 +135,17 @@ Page({
   onMore(e) {
     const id = e.currentTarget.dataset.id
     wx.showActionSheet({
-      itemList: ['在后面插入跨页', '换版式', '换风格', '删除跨页'],
+      itemList: ['在后面插入页面', '换版式', '删除这一对页面'],
       success: res => {
         if (res.tapIndex === 0) this.insertAfter(id)
         else if (res.tapIndex === 1) this.changeLayout(id)
-        else if (res.tapIndex === 2) this.changeStyle(id)
         else this.remove(id)
       }
     })
   },
 
   async insertAfter(id) {
-    const layoutId = await this.chooseLayout('插入跨页：选择版式')
+    const layoutId = await this.chooseLayout('插入页面：选择版式')
     if (!layoutId) return
     insertBodySpread(this.album, layoutId, id)
     this.refresh()
@@ -160,22 +158,13 @@ Page({
     const removed = changeSpreadLayout(this.album, id, layoutId)
     this.refresh()
     if (removed) {
-      wx.showToast({ title: `有 ${removed} 张照片移出本跨页，可在照片面板的“未使用”中找到`, icon: 'none', duration: 3000 })
+      wx.showToast({ title: `有 ${removed} 张照片移出这两页，可在照片面板的“未使用”中找到`, icon: 'none', duration: 3000 })
     }
-  },
-
-  // 给单个跨页换风格（模板页的 spread 模式，含「跟随主模板」）
-  changeStyle(id) {
-    wx.navigateTo({ url: `/pages/templates/templates?mode=spread&spreadId=${id}` })
-  },
-
-  onChangeTemplate() {
-    wx.navigateTo({ url: '/pages/templates/templates?mode=change' })
   },
 
   remove(id) {
     wx.showModal({
-      title: '删除跨页',
+      title: '删除这一对页面',
       content: '删除后，其中的照片仍保留在照片库中',
       confirmText: '删除',
       confirmColor: UI_COLORS.danger,

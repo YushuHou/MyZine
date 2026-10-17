@@ -2,6 +2,7 @@
   "navigationBarTitleText": "编辑",
   "disableScroll": true,
   "usingComponents": {
-    "photo-picker": "/components/photo-picker/photo-picker"
+    "photo-picker": "/components/photo-picker/photo-picker",
+    "style-sheet": "/components/style-sheet/style-sheet"
   }
 }

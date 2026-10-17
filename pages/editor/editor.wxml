@@ -1,45 +1,90 @@
-<!-- 编辑页：一屏一页 -->
+<!-- 编辑页：顶部栏（参考线 + 导出）→ 画布 → 翻页行 → 底部标签栏 -->
 <view class="page">
   <!-- 提示条：每次打开小程序后第一次进入编辑页时显示，5 秒后自动收起 -->
   <view wx:if="{{saveNotice}}" class="save-notice" bindtap="onCloseNotice">
     <text class="save-notice-text">相册只保存在本次使用中，关闭小程序后不会保留，记得及时导出 PDF 或保存图片。</text>
     <text class="save-notice-close">×</text>
   </view>
-  <view class="stage" bindtouchstart="onTouchStart" catchtouchmove="onTouchMove" bindtouchend="onTouchEnd" bindtouchcancel="onTouchEnd">
+
+  <!-- 顶部栏：左参考线开关，右导出（全页唯一的实心按钮） -->
+  <view class="topbar">
+    <view class="guide-toggle {{guides ? 'on' : ''}}" bindtap="onToggleGuides">
+      <image class="guide-icon" src="/assets/icons/{{guides ? 'guides-on' : 'guides'}}.svg" />
+    </view>
+    <view class="export-btn" bindtap="onExport">导出</view>
+  </view>
+
+  <view id="stage" class="stage" bindtouchstart="onTouchStart" catchtouchmove="onTouchMove" bindtouchend="onTouchEnd" bindtouchcancel="onTouchEnd">
     <canvas type="2d" id="pageCanvas" class="page-canvas" style="width: {{canvasW}}px; height: {{canvasH}}px;"></canvas>
   </view>
 
-  <view class="toolbar">
-    <view class="pager">
-      <button class="nav btn-secondary" size="mini" disabled="{{current <= 0}}" bindtap="onPrev">上一页</button>
-      <view class="pager-text">{{label}}</view>
-      <button class="nav btn-secondary" size="mini" disabled="{{current >= total - 1}}" bindtap="onNext">下一页</button>
-      <view class="guide-toggle {{guides ? 'on' : ''}}" bindtap="onToggleGuides">参考线</view>
+  <!-- 翻页：无边框箭头 + 页名文字 -->
+  <view class="pager">
+    <view class="arrow {{current <= 0 ? 'off' : ''}}" bindtap="onPrev">
+      <image class="arrow-icon" src="/assets/icons/chevron-left.svg" />
     </view>
-
-    <!-- 普通状态 -->
-    <view wx:if="{{mode === 'normal'}}" class="actions">
-      <view class="tool" bindtap="onEditInfo">书籍信息</view>
-      <view class="tool" bindtap="onManageSpreads">管理跨页</view>
-      <view class="tool" bindtap="onPreview">预览</view>
-      <view class="tool tool-primary" bindtap="onExport">导出</view>
-    </view>
-
-    <!-- 选中照片框 -->
-    <view wx:elif="{{mode === 'selected'}}" class="actions">
-      <view class="tool" bindtap="onChangePhoto">{{hasPhoto ? '换照片' : '选照片'}}</view>
-      <view class="tool {{hasPhoto && slotFit === 'fill' ? '' : 'disabled'}}" bindtap="onAdjust">调整</view>
-      <view class="tool {{hasPhoto ? '' : 'disabled'}}" bindtap="onToggleFit">{{slotFit === 'fit' ? '填满' : '完整显示'}}</view>
-      <view class="tool tool-primary" bindtap="onDeselect">完成</view>
-    </view>
-
-    <!-- 调整照片 -->
-    <view wx:else class="actions">
-      <view class="hint">单指拖动 · 双指缩放</view>
-      <view class="tool" bindtap="onResetAdjust">复位</view>
-      <view class="tool tool-primary" bindtap="onAdjustDone">完成</view>
+    <view class="pager-text">{{label}}</view>
+    <view class="arrow {{current >= total - 1 ? 'off' : ''}}" bindtap="onNext">
+      <image class="arrow-icon" src="/assets/icons/chevron-right.svg" />
     </view>
   </view>
 
+  <!-- 底部标签栏：图标在上、文字在下 -->
+  <view class="tabbar">
+    <!-- 普通状态 -->
+    <block wx:if="{{mode === 'normal'}}">
+      <view class="tab" bindtap="onEditInfo">
+        <image class="tab-icon" src="/assets/icons/book.svg" />
+        <text class="tab-text">书籍信息</text>
+      </view>
+      <view class="tab" bindtap="onManagePages">
+        <image class="tab-icon" src="/assets/icons/pages.svg" />
+        <text class="tab-text">页面</text>
+      </view>
+      <view class="tab" bindtap="onOpenStyles">
+        <image class="tab-icon" src="/assets/icons/palette.svg" />
+        <text class="tab-text">模板</text>
+      </view>
+      <view class="tab" bindtap="onPreview">
+        <image class="tab-icon" src="/assets/icons/preview.svg" />
+        <text class="tab-text">预览</text>
+      </view>
+    </block>
+
+    <!-- 选中照片框 -->
+    <block wx:elif="{{mode === 'selected'}}">
+      <view class="tab" bindtap="onChangePhoto">
+        <image class="tab-icon" src="/assets/icons/photo.svg" />
+        <text class="tab-text">{{hasPhoto ? '换照片' : '选照片'}}</text>
+      </view>
+      <view class="tab {{hasPhoto && slotFit === 'fill' ? '' : 'off'}}" bindtap="onAdjust">
+        <image class="tab-icon" src="/assets/icons/move.svg" />
+        <text class="tab-text">调整</text>
+      </view>
+      <view class="tab {{hasPhoto ? '' : 'off'}}" bindtap="onToggleFit">
+        <image class="tab-icon" src="/assets/icons/{{slotFit === 'fit' ? 'fill' : 'fit'}}.svg" />
+        <text class="tab-text">{{slotFit === 'fit' ? '填满' : '完整显示'}}</text>
+      </view>
+      <view class="tab tab-brand" bindtap="onDeselect">
+        <image class="tab-icon" src="/assets/icons/check-brand.svg" />
+        <text class="tab-text">完成</text>
+      </view>
+    </block>
+
+    <!-- 调整照片 -->
+    <block wx:else>
+      <view class="tab-hint">单指拖动 · 双指缩放</view>
+      <view class="tab" bindtap="onResetAdjust">
+        <image class="tab-icon" src="/assets/icons/reset.svg" />
+        <text class="tab-text">复位</text>
+      </view>
+      <view class="tab tab-brand" bindtap="onAdjustDone">
+        <image class="tab-icon" src="/assets/icons/check-brand.svg" />
+        <text class="tab-text">完成</text>
+      </view>
+    </block>
+  </view>
+
   <photo-picker show="{{pickerShow}}" photos="{{pickerPhotos}}" current-id="{{pickerCurrentId}}" bind:select="onPickerSelect" bind:close="onPickerClose" />
+  <style-sheet id="styleSheet" bind:apply="onStyleApply" />
 </view>
