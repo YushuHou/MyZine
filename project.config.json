@@ -22,6 +22,10 @@
       {
         "type": "folder",
         "value": "scripts"
+      },
+      {
+        "type": "folder",
+        "value": "dev"
       }
     ],
     "include": []

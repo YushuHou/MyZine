@@ -172,9 +172,12 @@ renderPage / renderSpread     背景（+ 纹样）→ 大装饰 → 色块 → �
      "pages": ["check/check", "doodles/doodles"]
    }
    ```
-3. 在开发者工具中重新编译，确认首页底部没有「开发工具」字样，且「详情 → 基本信息」中的代码包大小里没有 `dev` 分包。
+3. 打开 `project.config.json`，确认 `packOptions.ignore` 中有 `{ "type": "folder", "value": "dev" }`。`dev/` 文件夹不再是分包后，如果不排除，它会被当作主包文件一起上传。
+4. 在开发者工具中重新编译，确认首页底部没有「开发工具」字样，且「详情 → 基本信息」中的代码包大小里没有 `dev` 分包。
 
-即使忘记第 1、2 步，开发工具入口在正式版（`envVersion === 'release'`）中也不会显示；但分包仍会被打包上传，所以第 2 步不能省略。`dev/check/ttf/` 中的 TTF base64 只供验证页对照使用，随开发分包一起移除。
+**当前状态（2026-10-18）**：以上步骤已完成，`dev/` 文件夹保留在仓库中但不打包。以后要用开发工具：把 `DEV_TOOLS` 改回 `true`，在 `app.json` 中加回 dev 分包，并从 `packOptions.ignore` 中删掉 dev。
+
+即使忘记第 1、2 步，开发工具入口在正式版（`envVersion === 'release'`）中也不会显示；但分包仍会被打包上传，所以第 2、3 步不能省略。`dev/check/ttf/` 中的 TTF base64 只供验证页对照使用，随开发分包一起移除。
 
 ## 9. 已知限制
 
