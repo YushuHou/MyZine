@@ -11,18 +11,6 @@ const PAGE_PADDING_RPX = 32
 const ROW_RPX = 200
 const GAP_RPX = 16
 
-// 选择正文版式，返回版式或 null
-function chooseLayout(excludeId) {
-  const layouts = listLayouts('body').filter(l => l.id !== excludeId)
-  return new Promise(resolve => {
-    wx.showActionSheet({
-      itemList: layouts.map(l => l.name),
-      success: res => resolve(layouts[res.tapIndex]),
-      fail: () => resolve(null)
-    })
-  })
-}
-
 Page({
   data: {
     headItems: [],
@@ -30,7 +18,10 @@ Page({
     tailItems: [],
     rowH: 0,
     gridHeight: 0,
-    dragIndex: -1
+    dragIndex: -1,
+    // 版式选择面板
+    layoutPicker: { show: false, title: '', currentId: '' },
+    bodyLayouts: []
   },
 
   onLoad() {
@@ -40,7 +31,31 @@ Page({
     const width = info.windowWidth - PAGE_PADDING_RPX * 2 * rpx
     this.grid = createGrid(width, 1, GAP_RPX * rpx, ROW_RPX * rpx / width)
     this.renderer = getThumbRenderer()
+    this.setData({ bodyLayouts: listLayouts('body') })
     this.refresh()
+  },
+
+  // 打开版式选择面板，返回选中的版式 id；关闭面板返回 null
+  chooseLayout(title, currentId = '') {
+    return new Promise(resolve => {
+      this.layoutResolve = resolve
+      this.setData({ layoutPicker: { show: true, title, currentId } })
+    })
+  },
+
+  onLayoutSelect(e) {
+    this.closeLayoutPicker(e.detail.layoutId)
+  },
+
+  onLayoutClose() {
+    this.closeLayoutPicker(null)
+  },
+
+  closeLayoutPicker(layoutId) {
+    this.setData({ 'layoutPicker.show': false })
+    const resolve = this.layoutResolve
+    this.layoutResolve = null
+    if (resolve) resolve(layoutId)
   },
 
   // 列表项：页名、版式名和照片数；缩略图有缓存就直接用
@@ -102,9 +117,9 @@ Page({
   },
 
   async onAdd() {
-    const layout = await chooseLayout()
-    if (!layout) return
-    insertBodySpread(this.album, layout.id)
+    const layoutId = await this.chooseLayout('添加跨页：选择版式')
+    if (!layoutId) return
+    insertBodySpread(this.album, layoutId)
     this.refresh()
     wx.showToast({ title: '已在正文末尾添加', icon: 'none' })
   },
@@ -122,17 +137,17 @@ Page({
   },
 
   async insertAfter(id) {
-    const layout = await chooseLayout()
-    if (!layout) return
-    insertBodySpread(this.album, layout.id, id)
+    const layoutId = await this.chooseLayout('插入跨页：选择版式')
+    if (!layoutId) return
+    insertBodySpread(this.album, layoutId, id)
     this.refresh()
   },
 
   async changeLayout(id) {
     const spread = this.album.spreads.find(s => s.id === id)
-    const layout = await chooseLayout(spread.layoutId)
-    if (!layout) return
-    const removed = changeSpreadLayout(this.album, id, layout.id)
+    const layoutId = await this.chooseLayout('换版式', spread.layoutId)
+    if (!layoutId || layoutId === spread.layoutId) return
+    const removed = changeSpreadLayout(this.album, id, layoutId)
     this.refresh()
     if (removed) {
       wx.showToast({ title: `有 ${removed} 张照片移出本跨页，可在照片面板的“未使用”中找到`, icon: 'none', duration: 3000 })

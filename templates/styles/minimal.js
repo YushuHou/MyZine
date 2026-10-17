@@ -22,6 +22,8 @@ module.exports = {
     body: { family: 'serif', weight: 'normal', size: 34, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 26, lineHeight: 1.5, color: 'textMuted', letterSpacing: 2 }
   },
+  // 页码：正文页外侧下角；size、bottom 为基准 px，color 为 colors 中的键名
+  pageNumber: { show: true, family: 'sans-serif', size: 22, color: 'textMuted', bottom: 60 },
   // 背景：{ type: 'color', color } 或 { type: 'image', src, repeat: 'tile' | 'cover' }
   background: { type: 'color', color: '#F7F5F0' },
   // 照片边框（尺寸以 1080 宽为基准 px）

@@ -51,4 +51,13 @@
   <view class="footer">
     <button class="btn-primary" bindtap="onAdd">添加跨页</button>
   </view>
+
+  <layout-picker
+    show="{{layoutPicker.show}}"
+    title="{{layoutPicker.title}}"
+    layouts="{{bodyLayouts}}"
+    current-id="{{layoutPicker.currentId}}"
+    bind:select="onLayoutSelect"
+    bind:close="onLayoutClose"
+  />
 </view>

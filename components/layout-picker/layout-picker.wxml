@@ -1,0 +1,33 @@
+<!-- 版式选择面板 -->
+<view wx:if="{{show}}" class="picker">
+  <view class="mask" bindtap="onClose" catchtouchmove="noop"></view>
+  <view class="sheet">
+    <view class="header" catchtouchmove="noop">
+      <view class="title">{{title}}</view>
+      <view class="close" bindtap="onClose">×</view>
+    </view>
+    <scroll-view class="body" scroll-y>
+      <view wx:for="{{groups}}" wx:for-item="group" wx:key="title" class="group">
+        <view class="group-title">{{group.title}}</view>
+        <view class="grid">
+          <view wx:for="{{group.items}}" wx:key="id" class="card {{item.id === currentId ? 'current' : ''}}" data-id="{{item.id}}" bindtap="onSelect">
+            <!-- 示意图：3:2 跨页 -->
+            <view class="spread">
+              <block wx:if="{{item.spread}}">
+                <view class="page full">
+                  <view wx:for="{{item.pages[0].frames}}" wx:for-item="f" wx:key="id" class="frame" style="left: {{f.left}}%; top: {{f.top}}%; width: {{f.width}}%; height: {{f.height}}%;"></view>
+                </view>
+              </block>
+              <block wx:else>
+                <view wx:for="{{item.pages}}" wx:for-item="p" wx:for-index="pi" wx:key="pi" class="page">
+                  <view wx:for="{{p.frames}}" wx:for-item="f" wx:key="id" class="frame" style="left: {{f.left}}%; top: {{f.top}}%; width: {{f.width}}%; height: {{f.height}}%;"></view>
+                </view>
+              </block>
+            </view>
+            <view class="name">{{item.name}}</view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

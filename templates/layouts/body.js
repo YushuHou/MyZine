@@ -1,54 +1,48 @@
-// 正文版式（成对设计：左页 + 右页）
-// 坐标为 0–1 比例，相对单页 1080×1440；注释中为对应的基准 px
-// 左页外侧（左）留白大于内侧（右），右页对称，照片框不贴中缝
+// 正文版式（成对设计：左页 + 右页），由 parts.js 的页面组件组合而成
+// 同一张数提供横框和竖框的不同组合，供自动排版按照片方向匹配；
+// 用「一大一小」「错落」「满版 + 留白」等组合制造翻页节奏
+const { pair, spread } = require('./parts')
 
 module.exports = [
-  {
-    id: 'body-landscape',
-    name: '横图·上下双框',
-    pageType: 'body',
-    span: 'pair',
-    capacity: 4,
-    pages: [
-      {
-        // 左页：x 96、宽 912，框 3:2（912×608），上下间距 48
-        frames: [
-          { id: 'L1', x: 0.0889, y: 0.0611, w: 0.8444, h: 0.4222, orientation: 'landscape', radius: 0, rotate: 0, border: true },
-          { id: 'L2', x: 0.0889, y: 0.5167, w: 0.8444, h: 0.4222, orientation: 'landscape', radius: 0, rotate: 0, border: true }
-        ],
-        texts: []
-      },
-      {
-        // 右页：x 72
-        frames: [
-          { id: 'R1', x: 0.0667, y: 0.0611, w: 0.8444, h: 0.4222, orientation: 'landscape', radius: 0, rotate: 0, border: true },
-          { id: 'R2', x: 0.0667, y: 0.5167, w: 0.8444, h: 0.4222, orientation: 'landscape', radius: 0, rotate: 0, border: true }
-        ],
-        texts: []
-      }
-    ]
-  },
-  {
-    id: 'body-portrait',
-    name: '竖图·单页大框',
-    pageType: 'body',
-    span: 'pair',
-    capacity: 2,
-    pages: [
-      {
-        // 左页：框 3:4（816×1088），x 144、y 176
-        frames: [
-          { id: 'L1', x: 0.1333, y: 0.1222, w: 0.7556, h: 0.7556, orientation: 'portrait', radius: 0, rotate: 0, border: true }
-        ],
-        texts: []
-      },
-      {
-        // 右页：x 120
-        frames: [
-          { id: 'R1', x: 0.1111, y: 0.1222, w: 0.7556, h: 0.7556, orientation: 'portrait', radius: 0, rotate: 0, border: true }
-        ],
-        texts: []
-      }
-    ]
-  }
+  // ---- 每页一张 ----
+  pair('L1', 'L1', '横·左右各一'),
+  pair('P1', 'P1', '竖·左右各一'),
+  pair('L1T', 'L1B', '横·上下错落'),
+  pair('P1O', 'P1S', '竖·一大一小'),
+  pair('L1', 'P1', '横竖混排'),
+  pair('P1', 'L1', '竖横混排'),
+  pair('L1T', 'P1O', '横竖错落'),
+  pair('P1O', 'L1B', '竖横错落'),
+
+  // ---- 满版 + 小图（大小对比强烈） ----
+  pair('F', 'P1S', '满版 + 小竖图', 0.6),
+  pair('L1S', 'F', '小横图 + 满版', 0.6),
+
+  // ---- 每页两张 ----
+  pair('L2', 'L2', '横·每页两张'),
+  pair('P2', 'P2', '竖·每页两张'),
+  pair('L2D', 'P1', '大小横图 + 竖图'),
+  pair('P2S', 'L1', '错落竖图 + 横图'),
+  pair('P1', 'L2', '一竖两横'),
+  pair('L2', 'P1', '两横一竖'),
+
+  // ---- 三张 ----
+  pair('M3', 'L1B', '三图 + 横图'),
+  pair('T3', 'P1O', '三横竖排 + 竖图', 0.8),
+
+  // ---- 四宫格 + 一张（密与疏对比） ----
+  pair('G4L', 'L1S', '横四宫格 + 小图', 0.8),
+  pair('G4P', 'P1', '竖四宫格 + 竖图', 0.6),
+
+  // ---- 留白（较少出现） ----
+  pair('L1S', 'L1', '留白横图', 0.5),
+  pair('P1S', 'P2', '留白竖图', 0.5),
+
+  // ---- 跨页大图 ----
+  // 留边：版心内（x 96 ~ 2064，y 96 ~ 1320）
+  spread('b-S', '跨页大图', 96, 96, 1968, 1224, 0.3),
+  // 满版：铺满整个跨页
+  spread('b-SB', '跨页满版', 0, 0, 2160, 1440, 0.3),
+  // 全景长条：适合全景照片，只手动选择
+  spread('b-SP', '全景长图', 96, 360, 1968, 720, 0)
 ]

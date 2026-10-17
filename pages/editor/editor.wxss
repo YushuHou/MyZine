@@ -36,10 +36,6 @@ page {
   min-width: 200rpx;
   text-align: center;
 }
-.pager-count {
-  font-size: 24rpx;
-  color: #8A847A;
-}
 
 /* 固定高度：切换操作栏时画布位置不变 */
 .actions {

@@ -9,6 +9,8 @@ module.exports = {
   SAFE_MARGIN: 72,
   // 中缝：跨页中线左右各 40px 为书脊区域
   GUTTER: 40,
+  // 正文版心外侧边距（页码与外侧照片边缘对齐）
+  PAGE_MARGIN_OUTER: 96,
 
   // 照片方向判断：宽高比 > 1.1 为横图，< 0.9 为竖图，其余为方图
   LANDSCAPE_MIN_RATIO: 1.1,

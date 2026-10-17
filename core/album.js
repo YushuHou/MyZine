@@ -88,6 +88,7 @@ function pageLabel(pageType, side) {
  * 把相册展开为逐页列表（编辑页一屏一页、导出逐页渲染都基于它，不存储）
  * side：left / right 为左右页；full 为跨页大图（一张 2160×1440）；single 为封面、封底等单页
  * label：封面 / 环衬 / 扉页 / P1… / 封底，正文按正文页单独编号，跨页大图算两页
+ * pageNumbers：正文页印在页面上的页码，单页 [3]，跨页大图 [3, 4]；非正文页为 []
  */
 function getPageList(album) {
   const pages = []
@@ -97,15 +98,18 @@ function getPageList(album) {
     const sides = layout.span === 'pair' ? ['left', 'right'] : layout.span === 'spread' ? ['full'] : ['single']
     sides.forEach(side => {
       let label = pageLabel(spread.pageType, side)
+      let pageNumbers = []
       if (!label) {
         label = side === 'full' ? `P${bodyNo + 1}-${bodyNo + 2}` : `P${bodyNo + 1}`
-        bodyNo += side === 'full' ? 2 : 1
+        pageNumbers = side === 'full' ? [bodyNo + 1, bodyNo + 2] : [bodyNo + 1]
+        bodyNo += pageNumbers.length
       }
       pages.push({
         spreadId: spread.id,
         pageType: spread.pageType,
         side,
         label,
+        pageNumbers,
         pageIndex: pages.length + 1,
         slots: spread.slots,
         info: album.info
@@ -132,6 +136,11 @@ function getSpreadLabels(album) {
   return labels
 }
 
+// 某个跨页展开后的页（带页名和页码），跨页图片渲染时使用
+function getSpreadPages(album, spreadId) {
+  return getPageList(album).filter(p => p.spreadId === spreadId)
+}
+
 module.exports = {
   newId,
   createAlbum,
@@ -146,5 +155,6 @@ module.exports = {
   getSpreadStyle,
   getSpreadPhotos,
   getPageList,
+  getSpreadPages,
   getSpreadLabels
 }

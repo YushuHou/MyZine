@@ -21,15 +21,16 @@ function getWindowInfo() {
   return wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
 }
 
-// 画布显示尺寸：单页 3:4，在可用区域内尽量大
-function computeCanvasSize(info) {
+// 画布显示尺寸：单页 3:4，跨页大图 3:2，在可用区域内尽量大
+function computeCanvasSize(info, side) {
+  const ratio = side === 'full' ? 2 / 3 : 4 / 3
   const maxW = info.windowWidth - 32
   const maxH = info.windowHeight - TOOLBAR_HEIGHT
   let w = maxW
-  let h = w * 4 / 3
+  let h = w * ratio
   if (h > maxH) {
     h = maxH
-    w = h * 3 / 4
+    w = h / ratio
   }
   return { w: Math.floor(w), h: Math.floor(h) }
 }
@@ -67,7 +68,7 @@ Page({
     }
     this.pages = getPageList(this.album)
     this.windowInfo = getWindowInfo()
-    const size = computeCanvasSize(this.windowInfo)
+    const size = computeCanvasSize(this.windowInfo, this.pages[0].side)
     this.setData({ canvasW: size.w, canvasH: size.h, total: this.pages.length, label: this.pages[0].label })
   },
 
@@ -79,17 +80,35 @@ Page({
       .exec(res => {
         const info = res[0]
         if (!info || !info.node) return
-        const canvas = info.node
-        // 按设备像素比设置画布实际像素，renderPage 按画布宽度自动换算
-        const dpr = this.windowInfo.pixelRatio || 2
-        canvas.width = Math.round(this.data.canvasW * dpr)
-        canvas.height = Math.round(this.data.canvasH * dpr)
-        this.canvas = canvas
-        this.canvasRect = { left: info.left, top: info.top }
-        this.ctx = canvas.getContext('2d')
-        this.loader = createImageLoader(canvas)
+        this.canvas = info.node
+        this.ctx = this.canvas.getContext('2d')
+        this.loader = createImageLoader(this.canvas)
+        this.applyCanvasPixels(info)
         this.draw()
       })
+  },
+
+  // 按设备像素比设置画布实际像素，并记录画布在屏幕上的位置（触摸换算用）
+  applyCanvasPixels(rect) {
+    const dpr = this.windowInfo.pixelRatio || 2
+    this.canvas.width = Math.round(this.data.canvasW * dpr)
+    this.canvas.height = Math.round(this.data.canvasH * dpr)
+    this.canvasRect = { left: rect.left, top: rect.top }
+  },
+
+  // 单页（3:4）和跨页大图（3:2）之间切换时调整画布尺寸，调整完再绘制
+  updateCanvasSize(callback) {
+    const size = computeCanvasSize(this.windowInfo, this.pages[this.data.current].side)
+    if (!this.canvas || (size.w === this.data.canvasW && size.h === this.data.canvasH)) {
+      callback()
+      return
+    }
+    this.setData({ canvasW: size.w, canvasH: size.h }, () => {
+      wx.createSelectorQuery().select('#pageCanvas').boundingClientRect(rect => {
+        if (rect) this.applyCanvasPixels(rect)
+        callback()
+      }).exec()
+    })
   },
 
   // 从其他页面返回时：重新生成页列表（跨页可能已增删、排序），尽量停留在原来的页；
@@ -110,7 +129,7 @@ Page({
     this.pendingJump = null
     this.selectedFrameId = null
     this.setData({ current: index, total: this.pages.length, label: this.pages[index].label, mode: 'normal' })
-    this.draw()
+    this.updateCanvasSize(() => this.draw())
   },
 
   onUnload() {
@@ -157,7 +176,11 @@ Page({
       getSpreadStyle(this.album, spread),
       { width: this.canvas.width, height: this.canvas.height },
       this.images,
-      { guides: this.data.guides, selectedFrameId: this.data.mode === 'normal' ? null : this.selectedFrameId }
+      {
+        guides: this.data.guides,
+        spineGuide: true,
+        selectedFrameId: this.data.mode === 'normal' ? null : this.selectedFrameId
+      }
     )
   },
 
@@ -177,7 +200,7 @@ Page({
     if (index < 0 || index >= this.pages.length || index === this.data.current) return
     this.selectedFrameId = null
     this.setData({ current: index, label: this.pages[index].label, mode: 'normal' })
-    this.draw()
+    this.updateCanvasSize(() => this.draw())
   },
 
   onPrev() {

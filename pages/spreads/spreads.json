@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "管理跨页",
-  "usingComponents": {}
+  "usingComponents": {
+    "layout-picker": "/components/layout-picker/layout-picker"
+  }
 }

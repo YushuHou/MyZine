@@ -1,6 +1,6 @@
 // 把一个跨页画成一张 3:2 的图：缩略图、双页预览、阶段 4 的跨页图片导出共用
 const { getLayout } = require('../registry')
-const { getSpreadStyle } = require('../album')
+const { getSpreadStyle, getSpreadPages } = require('../album')
 const { renderPage } = require('./renderPage')
 
 /**
@@ -20,7 +20,10 @@ function renderSpread(ctx, album, spread, size, images, options = {}) {
   const pageW = W / 2
   const layout = getLayout(spread.layoutId)
   const style = getSpreadStyle(album, spread)
-  const base = { slots: spread.slots, info: album.info }
+  // 真实的页对象（带页码）；按 side 取用
+  const pages = {}
+  getSpreadPages(album, spread.id).forEach(p => { pages[p.side] = p })
+  const pageOf = side => pages[side] || { side, slots: spread.slots, info: album.info, pageNumbers: [] }
 
   ctx.save()
   ctx.clearRect(0, 0, W, H)
@@ -30,7 +33,7 @@ function renderSpread(ctx, album, spread, size, images, options = {}) {
   }
 
   if (layout.span === 'spread') {
-    renderPage(ctx, Object.assign({ side: 'full' }, base), layout, style, { width: W, height: H }, images)
+    renderPage(ctx, pageOf('full'), layout, style, { width: W, height: H }, images)
   } else {
     // 单页：封底在左，封面（及其他单页）在右
     const parts = layout.span === 'pair'
@@ -39,7 +42,7 @@ function renderSpread(ctx, album, spread, size, images, options = {}) {
     parts.forEach(part => {
       ctx.save()
       ctx.translate(part.x, 0)
-      renderPage(ctx, Object.assign({ side: part.side }, base), layout, style, { width: pageW, height: H }, images)
+      renderPage(ctx, pageOf(part.side), layout, style, { width: pageW, height: H }, images)
       ctx.restore()
     })
   }

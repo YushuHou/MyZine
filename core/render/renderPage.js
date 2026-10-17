@@ -16,7 +16,10 @@ const SELECTION_COLOR = '#2F80ED'
  * @param style   风格
  * @param size    画布尺寸 { width, height }：单页 3:4，跨页大图（side = full）3:2
  * @param images  imageLoader.loadPhotos() 的结果 { photoId: { image, exif, transform } }
- * @param options { guides: 是否画安全边距和中缝参考线；selectedFrameId: 高亮的照片框。都只在编辑时使用 }
+ * @param options 只在编辑时使用：
+ *   guides:          画安全边距和中缝参考线
+ *   spineGuide:      跨页大图（side = full）始终画中缝线，不受 guides 开关影响
+ *   selectedFrameId: 高亮的照片框
  */
 function renderPage(ctx, page, layout, style, size, images, options = {}) {
   const W = size.width
@@ -41,7 +44,9 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   ;(layoutPage.texts || []).forEach(block => {
     drawTextBlock(ctx, block, page.info, style, W, H, unit)
   })
+  drawPageNumbers(ctx, page, layoutPage, style, W, H, unit)
   if (options.guides) drawGuides(ctx, page.side, W, H, unit)
+  else if (options.spineGuide && page.side === 'full') drawSpineGuide(ctx, W, H, unit)
   if (options.selectedFrameId) {
     const frame = layoutPage.frames.find(f => f.id === options.selectedFrameId)
     if (frame) drawSelection(ctx, frame, W, H, unit)
@@ -149,6 +154,42 @@ function drawPhoto(ctx, entry, slot, x, y, w, h) {
   ctx.restore()
 }
 
+/**
+ * 页码：正文页外侧下角（左页在左下、右页在右下；跨页大图两个都画）
+ * 由风格的 pageNumber 控制：{ show, size, color, bottom（页码中线离页面下边的距离）}，尺寸均为基准 px
+ * 页码位置被照片盖住时（如满版照片）不画
+ */
+function drawPageNumbers(ctx, page, layoutPage, style, W, H, unit) {
+  const cfg = style.pageNumber
+  const numbers = page.pageNumbers || []
+  if (!cfg || !cfg.show || !numbers.length) return
+  const pageW = page.side === 'full' ? W / 2 : W
+  const margin = C.PAGE_MARGIN_OUTER * unit
+  const y = H - (cfg.bottom || 60) * unit
+  const size = (cfg.size || 22) * unit
+  // 每个页码：所在页的左边位置、对齐方式（外侧）
+  const spots = page.side === 'full'
+    ? [{ n: numbers[0], x: margin, align: 'left' }, { n: numbers[1], x: W - margin, align: 'right' }]
+    : [{ n: numbers[0], x: page.side === 'left' ? margin : pageW - margin, align: page.side === 'left' ? 'left' : 'right' }]
+
+  ctx.save()
+  ctx.font = `${cfg.weight || 'normal'} ${size}px ${cfg.family || 'sans-serif'}`
+  ctx.fillStyle = style.colors[cfg.color] || cfg.color || style.colors.textMuted || style.colors.text
+  ctx.textBaseline = 'middle'
+  spots.forEach(spot => {
+    const text = String(spot.n)
+    const tw = ctx.measureText(text).width
+    const left = spot.align === 'left' ? spot.x : spot.x - tw
+    // 被照片框盖住就跳过
+    const covered = layoutPage.frames.some(f =>
+      left < (f.x + f.w) * W && left + tw > f.x * W && y + size / 2 > f.y * H && y - size / 2 < (f.y + f.h) * H)
+    if (covered) return
+    ctx.textAlign = spot.align
+    ctx.fillText(text, spot.x, y)
+  })
+  ctx.restore()
+}
+
 // 选中高亮：框外侧描边
 function drawSelection(ctx, frame, W, H, unit) {
   const x = frame.x * W
@@ -185,6 +226,23 @@ function drawGuides(ctx, side, W, H, unit) {
   if (side === 'left') ctx.fillRect(W - g, 0, g, H)
   else if (side === 'right') ctx.fillRect(0, 0, g, H)
   else if (side === 'full') ctx.fillRect(pw - g, 0, 2 * g, H)
+  ctx.restore()
+  if (side === 'full') drawSpineGuide(ctx, W, H, unit)
+}
+
+// 跨页大图的中缝线：中线虚线 + 两侧书脊区域
+function drawSpineGuide(ctx, W, H, unit) {
+  const g = C.GUTTER * unit
+  ctx.save()
+  ctx.fillStyle = 'rgba(255, 70, 70, 0.12)'
+  ctx.fillRect(W / 2 - g, 0, 2 * g, H)
+  ctx.strokeStyle = 'rgba(255, 70, 70, 0.9)'
+  ctx.lineWidth = Math.max(1, 2 * unit)
+  if (ctx.setLineDash) ctx.setLineDash([16 * unit, 10 * unit])
+  ctx.beginPath()
+  ctx.moveTo(W / 2, 0)
+  ctx.lineTo(W / 2, H)
+  ctx.stroke()
   ctx.restore()
 }
 

@@ -1,7 +1,7 @@
 // 跨页图片渲染器：用一个离屏 canvas 逐个把跨页渲染成 JPG 文件，按内容缓存
 // 跨页管理的缩略图、双页预览共用
 const { getLayout } = require('../registry')
-const { getSpreadPhotos } = require('../album')
+const { getSpreadPhotos, getSpreadPages } = require('../album')
 const { renderSpread } = require('./renderSpread')
 const { createImageLoader } = require('./imageLoader')
 const { exportCanvas, removeExportFile } = require('../export/saveImage')
@@ -15,7 +15,8 @@ function contentKey(album, spread) {
     spread.styleId || album.defaultStyleId,
     spread.pageType,
     spread.slots,
-    hasText ? album.info : null
+    hasText ? album.info : null,
+    getSpreadPages(album, spread.id).map(p => p.pageNumbers)
   ])
 }
 

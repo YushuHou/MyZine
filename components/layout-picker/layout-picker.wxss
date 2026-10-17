@@ -1,0 +1,110 @@
+/* 版式选择面板 */
+.picker {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+}
+.mask {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 78vh;
+  display: flex;
+  flex-direction: column;
+  background: #F6F4EF;
+  border-radius: 24rpx 24rpx 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx;
+}
+.title {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+.close {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 60rpx;
+  text-align: center;
+  font-size: 48rpx;
+  color: #8A847A;
+}
+.body {
+  flex: 1;
+  height: 0;
+}
+.group {
+  padding: 0 32rpx 24rpx;
+}
+.group-title {
+  margin: 8rpx 0 16rpx;
+  font-size: 26rpx;
+  color: #8A847A;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+.card {
+  padding: 16rpx;
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  border: 4rpx solid transparent;
+}
+.card.current {
+  border-color: #2F80ED;
+}
+
+/* 示意图：外框 3:2，两页各 3:4 */
+.spread {
+  position: relative;
+  width: 100%;
+  padding-top: 66.67%;
+  display: flex;
+}
+.page {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: #F2EEE6;
+}
+.page:first-child {
+  left: 0;
+  box-shadow: inset -2rpx 0 0 #DDD6CA;
+}
+.page:last-child {
+  right: 0;
+}
+.page.full {
+  left: 0;
+  width: 100%;
+  box-shadow: none;
+}
+.frame {
+  position: absolute;
+  background: #B9B2A6;
+}
+.name {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  text-align: center;
+  color: #2B2B2B;
+}
