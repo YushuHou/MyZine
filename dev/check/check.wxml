@@ -24,6 +24,9 @@
   <view class="section-title">画布肉眼对比（每行应是不同字体，最后一行是系统衬线体）</view>
   <canvas type="2d" id="checkCanvas" class="canvas" style="width: {{canvasW}}px; height: {{canvasH}}px;"></canvas>
 
+  <view class="section-title">照片滤镜对比：原图 / ① filter 灰度 / ② saturation 叠灰 / 提亮 screen / 叠色 multiply</view>
+  <canvas type="2d" id="filterCanvas" class="canvas" style="width: {{filterW}}px; height: 64px;"></canvas>
+
   <view class="actions">
     <button class="btn-secondary half" bindtap="onRerun" disabled="{{running}}">重新检测</button>
     <button class="btn-primary half" bindtap="onCopy">复制结果</button>

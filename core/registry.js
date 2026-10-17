@@ -35,9 +35,15 @@ function getLayoutPage(layout, side) {
   return side === 'right' ? layout.pages[1] : layout.pages[0]
 }
 
-// 版式中全部照片框，按左页 → 右页、页内书写顺序排列
+// 页内照片框按阅读顺序排列：从上到下（同一行内 y 相差不到 5%）、从左到右
+// 右页由左页镜像而来，原始顺序会左右颠倒，照片填充和编号都要按视觉顺序
+function readingOrder(frames) {
+  return frames.slice().sort((a, b) => (Math.abs(a.y - b.y) < 0.05 ? a.x - b.x : a.y - b.y))
+}
+
+// 版式中全部照片框：左页 → 右页，页内按阅读顺序
 function getLayoutFrames(layout) {
-  return layout.pages.reduce((all, page) => all.concat(page.frames), [])
+  return layout.pages.reduce((all, page) => all.concat(readingOrder(page.frames)), [])
 }
 
 module.exports = {
@@ -47,5 +53,6 @@ module.exports = {
   listStyles,
   getLayoutPage,
   getLayoutFrames,
+  readingOrder,
   DEFAULT_STYLE_ID: styles[0].id
 }

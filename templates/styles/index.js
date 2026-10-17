@@ -3,9 +3,17 @@
 module.exports = [].concat(
   require('./solids'),
   [
+    // 风格
     require('./magazine'),
     require('./journal'),
     require('./film'),
+    require('./zine'),
+    require('./ticket'),
+    require('./collage'),
+    require('./hkretro'),
+    require('./japanese'),
+    require('./mono'),
+    // 主题
     require('./postcard')
   ]
 )

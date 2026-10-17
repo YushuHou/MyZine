@@ -1,5 +1,5 @@
 // 相册数据：创建、增删照片、查询，以及展开为逐页列表
-const { getLayout, getLayoutPage, getStyle, DEFAULT_STYLE_ID } = require('./registry')
+const { getLayout, getLayoutPage, getStyle, readingOrder, DEFAULT_STYLE_ID } = require('./registry')
 const { hashRandom } = require('./render/frames')
 
 let idSeed = 0
@@ -134,7 +134,7 @@ function getPageList(album) {
       }
       const frameNumbers = {}
       if (spread.pageType === 'body') {
-        getLayoutPage(layout, side).frames.forEach(f => {
+        readingOrder(getLayoutPage(layout, side).frames).forEach(f => {
           const slot = spread.slots[f.id]
           if (slot && album.photos.some(p => p.id === slot.photoId)) frameNumbers[f.id] = ++photoNo
         })

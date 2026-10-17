@@ -4,6 +4,8 @@
 // 3. 字体在 canvas 2d（页面画布 + 离屏画布）中是否生效：比较同一串文字的宽度，并测试多种 font 写法
 // 4. 页面普通文字（webview）是否生效：肉眼看，用来区分「字体数据有问题」还是「画布不认」
 // 5. 画布能否加载 Data URL 图片
+// 6. 照片滤镜（阶段 7 黑白、港风暖调、日系提亮）：ctx.filter 灰度、saturation 叠灰、screen 提亮、multiply 叠色
+//    读取像素颜色自动判断，并画出对比图
 const { FONTS, loadFont } = require('./fontFace')
 const testImage = require('./testImage.js')
 
@@ -33,6 +35,7 @@ Page({
     running: false,
     canvasW: 0,
     canvasH: CANVAS_H,
+    filterW: 0,
     // 页面普通文字样例
     webFonts: []
   },
@@ -42,7 +45,8 @@ Page({
     const win = wx.getWindowInfo ? wx.getWindowInfo() : sys
     this.setData({
       env: `${sys.brand} ${sys.model} · ${sys.system} · 微信 ${sys.version} · 基础库 ${sys.SDKVersion}`,
-      canvasW: win.windowWidth - 32
+      canvasW: win.windowWidth - 32,
+      filterW: win.windowWidth - 32
     })
   },
 
@@ -133,7 +137,109 @@ Page({
       img.src = testImage
     })
 
+    // ---- 6：照片滤镜（页面画布 + 离屏画布） ----
+    await this.checkFilters(dpr)
+
     this.setData({ running: false })
+  },
+
+  // 加载测试图（橙色星形）到指定画布
+  loadTestImage(canvas) {
+    return new Promise(resolve => {
+      const img = canvas.createImage()
+      img.onload = () => resolve(img)
+      img.onerror = () => resolve(null)
+      img.src = testImage
+    })
+  },
+
+  /**
+   * 五格对比：原图 / ctx.filter 灰度 / saturation 叠灰 / screen 提亮 / multiply 叠色
+   * 每格读取中心像素判断是否生效
+   */
+  runFilterTiles(ctx, img, k) {
+    const T = 56
+    const gap = 8
+    const px = (x, y) => {
+      try {
+        const d = ctx.getImageData(Math.round(x * k), Math.round(y * k), 1, 1).data
+        return [d[0], d[1], d[2]]
+      } catch (err) {
+        return null
+      }
+    }
+    const isGray = c => c && Math.abs(c[0] - c[1]) < 12 && Math.abs(c[1] - c[2]) < 12
+    const fmt = c => (c ? `rgb(${c.join(',')})` : '无法读取像素')
+    const results = []
+    const tile = i => i * (T + gap)
+    // 0 原图
+    ctx.drawImage(img, tile(0), 0, T, T)
+    const original = px(tile(0) + T / 2, T / 2)
+    // 1 ctx.filter = 'grayscale(1)'
+    ctx.save()
+    const hasFilter = 'filter' in ctx
+    ctx.filter = 'grayscale(1)'
+    ctx.drawImage(img, tile(1), 0, T, T)
+    ctx.restore()
+    const c1 = px(tile(1) + T / 2, T / 2)
+    results.push(['黑白方式① ctx.filter = grayscale(1)', isGray(c1), `${hasFilter ? '支持 filter 属性' : '没有 filter 属性'}；中心像素 ${fmt(c1)}（原图 ${fmt(original)}）`])
+    // 2 saturation 叠灰
+    ctx.drawImage(img, tile(2), 0, T, T)
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(tile(2), 0, T, T)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'saturation'
+    ctx.fillStyle = '#808080'
+    ctx.fillRect(tile(2), 0, T, T)
+    ctx.restore()
+    const c2 = px(tile(2) + T / 2, T / 2)
+    results.push(['黑白方式② saturation 叠灰', isGray(c2), `中心像素 ${fmt(c2)}`])
+    // 3 screen 提亮：橙色 + 40% 白色滤色，绿色分量应明显变大
+    ctx.fillStyle = '#FF8A2A'
+    ctx.fillRect(tile(3), 0, T, T)
+    ctx.save()
+    ctx.globalCompositeOperation = 'screen'
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+    ctx.fillRect(tile(3), 0, T, T)
+    ctx.restore()
+    const c3 = px(tile(3) + T / 2, T / 2)
+    results.push(['提亮 screen 滤色', !!c3 && c3[1] > 160 && c3[2] > 100, `中心像素 ${fmt(c3)}（未生效约为 rgb(255,138,42)）`])
+    // 4 multiply 叠色：橙色 × 灰色，红色分量应明显变小
+    ctx.fillStyle = '#FF8A2A'
+    ctx.fillRect(tile(4), 0, T, T)
+    ctx.save()
+    ctx.globalCompositeOperation = 'multiply'
+    ctx.fillStyle = '#808080'
+    ctx.fillRect(tile(4), 0, T, T)
+    ctx.restore()
+    const c4 = px(tile(4) + T / 2, T / 2)
+    results.push(['叠色 multiply 正片叠底', !!c4 && c4[0] < 170, `中心像素 ${fmt(c4)}（未生效约为 rgb(128,128,128)）`])
+    return results
+  },
+
+  async checkFilters(dpr) {
+    // 页面画布：画出来肉眼对比
+    const canvas = await new Promise(resolve => {
+      wx.createSelectorQuery().select('#filterCanvas').fields({ node: true }).exec(res => resolve(res[0] && res[0].node))
+    })
+    if (canvas) {
+      canvas.width = Math.round(this.data.filterW * dpr)
+      canvas.height = Math.round(64 * dpr)
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+      const img = await this.loadTestImage(canvas)
+      if (img) this.runFilterTiles(ctx, img, dpr).forEach(r => this.push(`页面画布·${r[0]}`, r[1], r[2]))
+    }
+    // 离屏画布：导出用的就是它
+    try {
+      const off = wx.createOffscreenCanvas({ type: '2d', width: 400, height: 64 })
+      const img = await this.loadTestImage(off)
+      if (img) this.runFilterTiles(off.getContext('2d'), img, 1).forEach(r => this.push(`离屏画布·${r[0]}`, r[1], r[2]))
+      else this.push('离屏画布·加载测试图', false, '加载失败')
+    } catch (err) {
+      this.push('离屏画布·滤镜', false, (err && err.message) || String(err))
+    }
   },
 
   /**

@@ -78,10 +78,65 @@ function drawPaper(ctx, N) {
   }
 }
 
+// 牛皮纸：棕黄底 + 深浅纤维 + 噪点
+function drawKraft(ctx, N) {
+  const rnd = seededRandom(7070)
+  ctx.fillStyle = '#C9A57A'
+  ctx.fillRect(0, 0, N, N)
+  for (let i = 0; i < 22000; i++) {
+    const dark = rnd() < 0.55
+    ctx.fillStyle = dark ? `rgba(90,60,30,${0.06 + rnd() * 0.08})` : `rgba(255,235,200,${0.06 + rnd() * 0.1})`
+    ctx.fillRect(Math.floor(rnd() * N), Math.floor(rnd() * N), 1 + Math.floor(rnd() * 2), 1)
+  }
+  ctx.lineWidth = 1
+  for (let i = 0; i < 520; i++) {
+    const x = rnd() * N
+    const y = rnd() * N
+    const len = 8 + rnd() * 22
+    const a = (rnd() - 0.5) * 0.8
+    const dark = rnd() < 0.6
+    ctx.strokeStyle = dark ? `rgba(100,70,35,${0.15 + rnd() * 0.15})` : `rgba(240,215,170,${0.2 + rnd() * 0.2})`
+    wrapped(N, (ox, oy) => {
+      ctx.beginPath()
+      ctx.moveTo(x + ox, y + oy)
+      ctx.lineTo(x + ox + len * Math.cos(a), y + oy + len * Math.sin(a))
+      ctx.stroke()
+    })
+  }
+}
+
+// 报纸：浅灰新闻纸 + 噪点 + 极淡的「文字行」（短横线排成的行），像印刷背透
+function drawNewsprint(ctx, N) {
+  const rnd = seededRandom(1888)
+  ctx.fillStyle = '#E7E4DC'
+  ctx.fillRect(0, 0, N, N)
+  for (let i = 0; i < 16000; i++) {
+    ctx.fillStyle = rnd() < 0.6 ? `rgba(60,60,60,${0.04 + rnd() * 0.05})` : `rgba(255,255,255,${0.1 + rnd() * 0.1})`
+    ctx.fillRect(Math.floor(rnd() * N), Math.floor(rnd() * N), 1, 1)
+  }
+  // 两栏文字行（平铺后连续）
+  const lineH = 9
+  ctx.fillStyle = 'rgba(40,40,40,0.06)'
+  for (let col = 0; col < 2; col++) {
+    const x0 = col * N / 2 + 10
+    const colW = N / 2 - 20
+    for (let y = 6; y < N; y += lineH) {
+      let x = x0
+      while (x < x0 + colW) {
+        const w = 6 + rnd() * 26
+        ctx.fillRect(x, y, Math.min(w, x0 + colW - x), 3)
+        x += w + 4
+      }
+    }
+  }
+}
+
 // 纹理定义：生成函数、边长（px）、导出格式（需要透明用 png）
 const TEXTURES = {
   grain: { draw: drawGrain, size: 256, fileType: 'png' },
-  paper: { draw: drawPaper, size: 512, fileType: 'jpg' }
+  paper: { draw: drawPaper, size: 512, fileType: 'jpg' },
+  kraft: { draw: drawKraft, size: 512, fileType: 'jpg' },
+  newsprint: { draw: drawNewsprint, size: 512, fileType: 'jpg' }
 }
 
 const cache = {}
@@ -111,4 +166,4 @@ function textureSize(name) {
   return TEXTURES[name] ? TEXTURES[name].size : 256
 }
 
-module.exports = { getTexturePath, textureSize, drawPaper, drawGrain }
+module.exports = { getTexturePath, textureSize, drawPaper, drawGrain, drawKraft, drawNewsprint }

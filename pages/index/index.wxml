@@ -47,7 +47,7 @@
   </block>
 
   <view wx:if="{{devTools}}" class="dev-links">
-    <text bindtap="onDevCheck">开发工具：素材方案验证</text>
+    <text bindtap="onDevCheck">开发工具：素材与滤镜验证</text>
     <text class="dev-sep">·</text>
     <text bindtap="onDevDoodles">线稿与字形预览</text>
   </view>

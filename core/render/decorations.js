@@ -3,6 +3,7 @@
 const { hashRandom } = require('./frames')
 const { textureSize } = require('./textures')
 const { drawStamp, drawPostmark, drawAirmailBorder } = require('./postcard')
+const { drawOutline, drawHalftone } = require('./paperCraft')
 
 // 风格颜色：可写 colors 中的键名，也可直接写颜色值
 function colorOf(style, value, fallback) {
@@ -110,6 +111,7 @@ function roundRect(ctx, x, y, w, h, r) {
  * - perforation 胶片齿孔：{ edge: 'top' | 'bottom' | 'both', holeW, holeH, gap, offset（离页边）, radius, color }
  * - gutterLine 中缝细线：{ color, width（基准 px） }，画在靠中缝的页边（跨页大图画在中线）
  * - airmailBorder 航空信封红蓝斜条页边：{ colors, width, stripe }
+ * - halftone 半调网点色块：{ x, y, w, h, color, dot, gap, fade }
  * 通用：chance（偶尔出现）、mirror（右页镜像）、pages、pageTypes
  */
 function drawDecorations(ctx, style, page, W, H, unit, images) {
@@ -121,6 +123,8 @@ function drawDecorations(ctx, style, page, W, H, unit, images) {
       ctx.fillRect(mirroredX(d, page) * W, d.y * H, d.w * W, d.h * H)
     } else if (d.type === 'airmailBorder') {
       drawAirmailBorder(ctx, style, d, page, W, H, unit)
+    } else if (d.type === 'halftone') {
+      drawHalftone(ctx, style, d, mirroredX(d, page) * W, d.y * H, d.w * W, d.h * H, unit)
     } else if (d.type === 'line') {
       ctx.strokeStyle = colorOf(style, d.color, '#000')
       ctx.lineWidth = (d.lineWidth || 2) * unit
@@ -196,6 +200,8 @@ function drawPerforation(ctx, style, d, W, H, unit) {
  * 照片框装饰（画在照片上面，坐标系已按照片框旋转）
  * - tape 和纸胶带：{ colors, width, height, angleJitter, placement: 'top' | 'corners' }
  * - stamp 邮票框 / postmark 邮戳圆环（明信片）：largestOnly 时只画在本页最大的照片框上；minWidth 小于它的框不画
+ * - outline 霓虹描边：{ color, width, offset, glow }
+ * 通用：layer: 'frame' 表示跟着这张照片一起画（会被后面叠上来的照片盖住）
  * - dateStamp 日期戳：画在照片区域内，见 drawDateStamp
  * @param frame  resolveFrames 之后的照片框
  * @param rect   照片框外形区域（画布 px）{ x, y, w, h }
@@ -207,13 +213,21 @@ function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {})
   if (!frame.framed) return
   let stampRect = null
   ;(style.frameDecorations || []).forEach(d => {
+    // layer: 'frame' 的装饰在画这张照片时就画（renderPage 传 layer），其余在所有照片之后画
+    if ((d.layer === 'frame') !== (ctxInfo.layer === 'frame')) return
     if (d.largestOnly && !ctxInfo.isLargest) return
     if (d.minWidth && rect.w < d.minWidth * unit) return
     // 邮票、邮戳只贴在矩形照片上（圆形、拱形的外接方框角上是空的）
     if ((d.type === 'stamp' || d.type === 'postmark') && frame.shape !== 'rect' && frame.shape !== 'rounded') return
     if (d.type === 'tape') drawTapes(ctx, d, rect, unit, seed)
     else if (d.type === 'stamp') stampRect = drawStamp(ctx, style, d, rect, unit, seed)
-    else if (d.type === 'postmark' && stampRect) drawPostmark(ctx, style, d, stampRect, ctxInfo.info, unit, seed)
+    else if (d.type === 'postmark') {
+      // 没有邮票时，邮戳压在照片右上角（position: 'top-left' 时在左上角，如票根的副券在右侧）
+      const R = (d.r || 74) * unit
+      const ax = d.position === 'top-left' ? rect.x + R * 0.9 : rect.x + rect.w - R * 1.1
+      const anchor = stampRect || { x: ax, y: rect.y - R * 0.25, w: 0, h: R }
+      drawPostmark(ctx, style, d, anchor, ctxInfo.info, unit, seed)
+    } else if (d.type === 'outline') drawOutline(ctx, style, d, rect, unit)
   })
 }
 

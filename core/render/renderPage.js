@@ -4,7 +4,8 @@ const { computePlacement } = require('./photoGeometry')
 const { isRotated90, applyExifTransform } = require('./exif')
 const { drawTextBlock } = require('./text')
 const { getLayoutPage } = require('../registry')
-const { resolveFrames, photoRect, borderOf, outerRect, cornerRadius, shapePath } = require('./frames')
+const { resolveFrames, photoRect, borderOf, stubSide, outerRect, cornerRadius, shapePath } = require('./frames')
+const { applyPhotoFilters, drawTornBacking, drawTicketStub } = require('./paperCraft')
 const { drawBackground, pageColorOf, drawBlocks, drawGrain, drawDecorations, drawFrameDecorations, drawDateStamp } = require('./decorations')
 const { drawSlots, drawRunningHeader, drawPhotoIndex } = require('./decoText')
 const { drawPageDoodles } = require('./doodles')
@@ -51,9 +52,15 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   }
   drawBlocks(ctx, style, layoutPage, W, H)
   drawDecorations(ctx, style, page, W, H, unit, images)
-  frames.forEach(frame => drawFrame(ctx, frame, page.slots[frame.id], style, images, W, H, unit, page))
-  // 胶带、邮票等照片框装饰在所有照片之后画，可以压住相邻照片
   const largest = frames.filter(f => f.framed).reduce((best, f) => (!best || f.w * f.h > best.w * best.h ? f : best), null)
+  frames.forEach(frame => {
+    drawFrame(ctx, frame, page.slots[frame.id], style, images, W, H, unit, page)
+    // layer: 'frame' 的装饰（如霓虹描边）跟着这张照片画，后面叠上来的照片能盖住它
+    withFrameTransform(ctx, frame, W, H, rect => {
+      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, layer: 'frame' })
+    })
+  })
+  // 胶带、邮票等照片框装饰在所有照片之后画，可以压住相邻照片
   frames.forEach(frame => {
     withFrameTransform(ctx, frame, W, H, rect => {
       drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest })
@@ -109,8 +116,12 @@ function drawFrame(ctx, frame, slot, style, images, W, H, unit, page) {
   const hasBorder = border.width > 0
   const shadow = border.shadow
 
+  const pf = style.photoFrame || {}
+  const seed = `${page.spreadId || ''}:${frame.id}`
   withFrameTransform(ctx, frame, W, H, rect => {
     const radius = cornerRadius(frame, style, rect.w, rect.h, unit)
+    // 撕边垫纸（拼贴剪报）：画在照片下面
+    if (pf.backing && frame.framed) drawTornBacking(ctx, style, pf.backing, rect, unit, seed)
     // 底板：有边框时是边框色；只有阴影时是留白色
     if (hasBorder || shadow) {
       ctx.save()
@@ -134,9 +145,15 @@ function drawFrame(ctx, frame, slot, style, images, W, H, unit, page) {
     ctx.fillRect(inner.x, inner.y, inner.w, inner.h)
     if (entry) {
       drawPhoto(ctx, entry, slot, inner.x, inner.y, inner.w, inner.h)
+      // 照片滤镜（黑白、叠色、漏光）只作用于照片区域
+      applyPhotoFilters(ctx, style, inner, unit, seed)
       drawDateStamp(ctx, style, inner, page.info, unit)
     }
     ctx.restore()
+    // 票根副券：撕线、缺口、ADMIT ONE 和照片编号
+    if (border.stub) {
+      drawTicketStub(ctx, style, border.stub, rect, inner, stubSide(rect), unit, (page.frameNumbers || {})[frame.id])
+    }
   })
 }
 

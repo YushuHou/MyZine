@@ -46,9 +46,20 @@ function borderOf(frame, style) {
     return { width: frame.mat.border || 0, color: frame.mat.color || '#FFFFFF', bottomExtra: 0, shadow: frame.mat.shadow ? (pf.shadow || DEFAULT_SHADOW) : null }
   }
   if (!frame.framed) return { width: 0, color: null, bottomExtra: 0, shadow: frame.bleed ? null : pf.shadow }
-  // 拍立得加宽底边只用于矩形类
+  // 拍立得加宽底边、票根副券只用于矩形类
   const rectLike = frame.shape === 'rect' || frame.shape === 'rounded'
-  return { width: pf.borderWidth || 0, color: pf.borderColor, bottomExtra: rectLike ? (pf.bottomExtra || 0) : 0, shadow: pf.shadow }
+  return {
+    width: pf.borderWidth || 0,
+    color: pf.borderColor,
+    bottomExtra: rectLike ? (pf.bottomExtra || 0) : 0,
+    shadow: pf.shadow,
+    stub: rectLike && pf.ticketStub ? pf.ticketStub : null
+  }
+}
+
+// 票根副券在哪一侧：横的框在右侧，竖的框在下方
+function stubSide(rect) {
+  return rect.w >= rect.h ? 'right' : 'bottom'
 }
 
 // 叠压照片默认的阴影（风格没设阴影时）
@@ -78,7 +89,14 @@ function photoRect(frame, style, W, H, unit) {
   const b = borderOf(frame, style)
   const bw = b.width * unit
   const extra = b.bottomExtra * unit
-  return { x: r.x + bw, y: r.y + bw, w: r.w - bw * 2, h: r.h - bw * 2 - extra }
+  const inner = { x: r.x + bw, y: r.y + bw, w: r.w - bw * 2, h: r.h - bw * 2 - extra }
+  // 票根副券：从照片区域里让出一条
+  if (b.stub) {
+    const ratio = b.stub.ratio || 0.22
+    if (stubSide(r) === 'right') inner.w -= r.w * ratio
+    else inner.h -= r.h * ratio
+  }
+  return inner
 }
 
 // 圆角大小（画布 px）：rounded 默认取短边的 8%
@@ -150,4 +168,4 @@ function pointInShape(shape, px, py, x, y, w, h) {
   return true
 }
 
-module.exports = { hashRandom, isBleed, resolveFrames, borderOf, outerRect, photoRect, cornerRadius, shapePath, pointInShape }
+module.exports = { hashRandom, isBleed, resolveFrames, borderOf, stubSide, outerRect, photoRect, cornerRadius, shapePath, pointInShape }
