@@ -10,7 +10,8 @@
 //     { type: 'patternBlock', name, x, y, w, h, fill, color, alpha, cell, weight },           // 纹样色块（左右页随机一侧，右页镜像）
 //     { type: 'deco', deco: { …页面装饰… }, weight }                                          // 任意页面装饰（如格纹桌布页边）
 //   ],
-//   small: [{ type: 'doodle', weight }, { type: 'seal', size: [110, 150], color, weight }, { type: 'passport', size: [140, 180], count: [1, 3], colors, weight }],
+//   small: [{ type: 'doodle', weight }, { type: 'seal', size: [110, 150], color, weight }, { type: 'passport', size: [140, 180], count: [1, 3], colors, weight },
+//           { type: 'tornStrip', size: [240, 340], paper, height, font, text, weight }（撕纸条）, { type: 'luggageTag', size: [260, 320], paper, band, string, weight }（行李吊牌）],
 //   smallPerSpread: [2, 3],
 //   pageTypes: ['body']
 // }
@@ -22,6 +23,7 @@ const { drawScenery } = require('./scenery')
 const { drawPattern, fillPattern, drawPatternBand, drawPatternBlock } = require('./patterns')
 const { sealChars, drawSeal, sealRadius, drawPassportStamps, passportRadius } = require('./seals')
 const { drawDecoration } = require('./decorations')
+const { drawTornStrip, drawLuggageTag, pickStripText } = require('./paperBits')
 
 const cache = {}
 let cacheSize = 0
@@ -148,7 +150,8 @@ function buildBig(cand, layout, sides, rnd) {
 
 /**
  * 某个跨页的装饰计划（缓存）
- * @returns { big: { cfg, … } | null, small: { side: [item] }, names: { stamp: { side }, corner: { side } } }
+ * @returns { big: { cfg, … } | null, small: { side: [item] }, names: { stamp: { side }, corner: { side } }, stripSide }
+ *   stripSide：照片角撕纸条画在哪一页（每跨页最多 1 条），没有时为 null
  *   item：{ type: 'doodle', name } | { type: 'seal', cfg, size } | { type: 'passport', cfg, size, count }（size 为基准 px）
  */
 function planOrnaments(style, page, layout) {
@@ -160,7 +163,7 @@ function planOrnaments(style, page, layout) {
   const sides = sidesOf(layout)
   const cfg = style.ornaments
   const doodleCfg = style.doodles || {}
-  const plan = { big: null, small: {}, names: { stamp: {}, corner: {} } }
+  const plan = { big: null, small: {}, names: { stamp: {}, corner: {} }, stripSide: null }
   sides.forEach(s => { plan.small[s] = [] })
 
   // 本跨页的线稿名：洗牌后不放回地取
@@ -174,7 +177,12 @@ function planOrnaments(style, page, layout) {
   ;(style.frameDecorations || []).forEach(fd => {
     if (fd.type === 'stamp' && fd.doodles) sides.forEach(s => { plan.names.stamp[s] = take(fd.doodles, `stamp:${s}`) })
     if (fd.type === 'cornerDoodle') sides.forEach(s => { plan.names.corner[s] = take(fd.names || ['branch'], `corner:${s}`) })
+    // 照片角撕纸条：按 chance 出现，随机选一页
+    if (fd.type === 'tornStrip' && rnd('strip:on') < (fd.chance == null ? 1 : fd.chance)) {
+      plan.stripSide = sides[Math.floor(rnd('strip:side') * sides.length)]
+    }
   })
+  const frameStrip = (style.frameDecorations || []).some(fd => fd.type === 'tornStrip')
 
   const pageTypes = (cfg && cfg.pageTypes) || doodleCfg.pageTypes
   const active = !pageTypes || pageTypes.indexOf(page.pageType) >= 0
@@ -195,17 +203,28 @@ function planOrnaments(style, page, layout) {
     const items = []
     let sealDone = !sealChars(location)
     let passportDone = false
+    // 撕纸条、行李吊牌每跨页最多 1 个；风格已有照片角撕纸条时不再放留白处的纸条
+    let stripDone = frameStrip
+    let tagDone = false
     for (let i = 0; i < quota; i++) {
       const avail = types.filter(t =>
         (t.type === 'doodle' && (doodleCfg.names || []).some(n => !used[n])) ||
         (t.type === 'seal' && !sealDone) ||
-        (t.type === 'passport' && !passportDone))
+        (t.type === 'passport' && !passportDone) ||
+        (t.type === 'tornStrip' && !stripDone) ||
+        (t.type === 'luggageTag' && !tagDone))
       if (!avail.length) break
       const t = avail[pickWeighted(avail, rnd, `small:type:${i}`)]
       if (t.type === 'doodle') items.push({ type: 'doodle', name: take(doodleCfg.names, `doodle:${i}`) })
       else if (t.type === 'seal') {
         sealDone = true
         items.push({ type: 'seal', cfg: t, size: between(t.size || [110, 150], rnd(`seal:size:${i}`)) })
+      } else if (t.type === 'tornStrip') {
+        stripDone = true
+        items.push({ type: 'tornStrip', cfg: t, size: between(t.size || [240, 340], rnd(`strip:size:${i}`)) })
+      } else if (t.type === 'luggageTag') {
+        tagDone = true
+        items.push({ type: 'luggageTag', cfg: t, size: between(t.size || [260, 320], rnd(`tag:size:${i}`)) })
       } else {
         passportDone = true
         items.push({ type: 'passport', cfg: t, size: between(t.size || [140, 180], rnd(`pp:size:${i}`)), count: intBetween(t.count || [1, 3], rnd(`pp:count:${i}`)) })
@@ -285,7 +304,11 @@ function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, b
   // 半径大的先放
   const sized = items.map(it => {
     const size = it.type === 'doodle' ? maxS * unit : it.size * unit
-    const radius = it.type === 'seal' ? sealRadius(size, page.info) : it.type === 'passport' ? passportRadius(size, it.count) : size / 2
+    const radius = it.type === 'seal' ? sealRadius(size, page.info)
+      : it.type === 'passport' ? passportRadius(size, it.count)
+      : it.type === 'tornStrip' ? size * 0.46
+      : it.type === 'luggageTag' ? size * 0.46
+      : size / 2
     return { it, size, radius: radius + 12 * unit }
   }).sort((a, b) => b.radius - a.radius)
   const taken = {}
@@ -322,6 +345,13 @@ function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, b
         lineWidth: (cfg.lineWidth || 3) * unit,
         rotate: (rnd(`rot:${k}`) * 2 - 1) * (cfg.rotate || 0)
       })
+    } else if (it.type === 'tornStrip') {
+      const text = pickStripText(it.cfg, page, style)
+      drawTornStrip(ctx, style, it.cfg, spot.x, spot.y, size * scale, (rnd(`strip:${k}`) * 2 - 1) * 8, text, unit, `${seed}:${page.side}`)
+    } else if (it.type === 'luggageTag') {
+      // 绳子伸向页面外侧
+      const outward = page.side === 'left' ? -1 : page.side === 'right' ? 1 : (spot.x < W / 2 ? -1 : 1)
+      drawLuggageTag(ctx, style, it.cfg, spot.x, spot.y, size * scale, page, unit, `${seed}:${page.side}`, outward, bg)
     } else if (it.type === 'seal') {
       drawSeal(ctx, style, it.cfg, spot.x, spot.y, size * scale, page.info, `${seed}:${page.side}`, bg)
     } else {

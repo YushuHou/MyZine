@@ -29,6 +29,12 @@ module.exports = {
     'Scrapbook', 'Collected', 'Stop the Press', 'The Gazette', 'Snippets', 'Paper Trail',
     'Read All About It', 'Bits & Pieces', 'Front Row'
   ],
+  // 撕纸条短句：整本书不重复
+  stripPool: [
+    'Exclusive', 'Late News', 'Local Hero', 'Page One', 'Spotted', 'Big Scoop', 'Top Story', 'Field Report',
+    'Headliner', 'Just In', 'On Location', 'Staff Pick', 'Eyewitness', 'Special Report', 'The Lowdown',
+    'Fresh Print', 'Sidebar', 'Update', 'In Brief', 'Extra'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'playfair', family: 'serif', size: 112, color: 'text' }, minScale: 0.5 },
     kicker: { text: '{location} · {date}', font: { glyph: 'oswald', family: 'sans-serif', size: 24, letterSpacing: 4, uppercase: true, color: 'accent' } },
@@ -51,7 +57,9 @@ module.exports = {
     backing: { color: '#FFFFFF', margin: 18, jag: 7 }
   },
   frameDecorations: [
-    { type: 'tape', colors: ['rgba(240, 230, 200, 0.85)', 'rgba(220, 220, 215, 0.85)'], width: 150, height: 42, placement: 'corners', angleJitter: 8 }
+    { type: 'tape', colors: ['rgba(240, 230, 200, 0.85)', 'rgba(220, 220, 215, 0.85)'], width: 150, height: 42, placement: 'corners', angleJitter: 8 },
+    // 撕纸条（阶段 7d）：旧报纸色 + 打字机感大写，斜压在照片下角
+    { type: 'tornStrip', paper: 'news', size: [220, 320], height: 64, chance: 0.6, text: ['pool', 'place'], font: { glyph: 'oswald', family: 'sans-serif', size: 30, letterSpacing: 3, uppercase: true, color: 'text' } }
   ],
   decorations: [
     // 分栏细线：外侧一条竖线，约一半的页出现

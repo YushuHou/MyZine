@@ -45,6 +45,7 @@ core/                               逻辑层（不依赖页面）
     ornaments.js    跨页装饰计划：1 个大装饰 + 2–3 个小装饰，同一跨页线稿不重复；小装饰的摆放
     scenery.js      程序生成的场景剪影：山脉、树林、海浪、城市天际线、丘陵
     seals.js        中式红色方印（地名竖排）、护照入境章
+    paperBits.js    撕纸条（毛边 + 纸芯，写短句或地点日期）、行李吊牌（孔、麻绳、栏位、条形码）
     patterns.js     几何纹样：青海波、回纹、麻叶、七宝、波点、条纹、方格纸、点阵、横线信纸
     color.js        颜色解析、混色、降饱和
     textures.js     代码生成的纹理：颗粒、纸张、牛皮纸、报纸
@@ -96,11 +97,12 @@ renderPage / renderSpread     背景（+ 纹样）→ 大装饰 → 色块 → �
 | `grain` / `pagePalette` | 颗粒感；底色在跨页间轮换（左右页可不同） |
 | `photoFrame` | `borderWidth` `borderColor` `bottomExtra`（拍立得）`shadow` `rotateJitter` `backing`（撕边垫纸）`ticketStub`（票根） |
 | `photoFilter` | `[{ type: 'grayscale' }, { type: 'tint', color, mode, alpha }, { type: 'lightLeak' }]` |
-| `frameDecorations` | `tape` `stamp` `postmark` `dateStamp` `outline` `plateRim` `cornerDoodle`；`largestOnly`、`layer: 'frame'` |
+| `frameDecorations` | `tape` `stamp` `postmark` `dateStamp` `outline` `plateRim` `cornerDoodle` `tornStrip`（照片角撕纸条，每跨页最多 1 条）；`largestOnly`、`layer: 'frame'` |
 | `decorations` | `rect` `line` `text` `perforation` `gutterLine` `halftone` `airmailBorder` `checkerBorder` `fenceBorder` `route` `patternBand`（纹样页边条）`patternBlock`（纹样色块）；`rect` 可加 `pattern`；`chance`、`mirror`、`pageTypes` |
 | `doodles` | 线稿：`names` `perSpread`（没有 `ornaments` 时的数量）`size` `colors` `lineWidth` `rotate` `avoid`。同一跨页不重复 |
-| `ornaments` | 跨页装饰计划（见 `core/render/ornaments.js` 文件头）：`big` 大装饰候选（`scenery` 剪影 / `pagePattern` 整页底纹 / `patternBand` / `patternBlock` / `deco` 任意页面装饰，带 `weight`，放不下自动换下一个）；`small` 小装饰类型（`doodle` / `seal` 方印 / `passport` 护照章）；`smallPerSpread`；`pageTypes` |
+| `ornaments` | 跨页装饰计划（见 `core/render/ornaments.js` 文件头）：`big` 大装饰候选（`scenery` 剪影 / `pagePattern` 整页底纹 / `patternBand` / `patternBlock` / `deco` 任意页面装饰，带 `weight`，放不下自动换下一个）；`small` 小装饰类型（`doodle` / `seal` 方印 / `passport` 护照章 / `tornStrip` 撕纸条 / `luggageTag` 行李吊牌）；`smallPerSpread`；`pageTypes` |
 | `wordPool` / `decoText` | 装饰词池（建议 20 个以上：整本书不重复，用完才重来）；`headline` `kicker` `greeting` `runningHeader` `index` 的内容和字体（`glyph: 'playfair' \| 'caveat' \| 'oswald'` 用字形路径）；`plate` 底牌、`dy` 下移 |
+| `stripPool` | 撕纸条短句（建议 20 条，整本书不重复），和「地点 · 日期」轮换 |
 | `pageNumber` | `{ show, glyph, size, color, format: 'pad2' }` |
 | `layoutWeights` | 偏好版式：`{ 版式 id: 倍数 }`，≥ 2 时方框按完全匹配计分 |
 | `darkVariant` | 反色跨页的深色配置（约每 5 个正文跨页一次） |

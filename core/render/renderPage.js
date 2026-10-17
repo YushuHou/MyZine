@@ -57,7 +57,7 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   drawBlocks(ctx, style, layoutPage, W, H, unit)
   drawDecorations(ctx, style, page, W, H, unit, images, bg)
   // 照片上的邮票、照片角线稿用计划分好的线稿名
-  const names = { stamp: plan.names.stamp[page.side], corner: plan.names.corner[page.side] }
+  const names = { stamp: plan.names.stamp[page.side], corner: plan.names.corner[page.side], strip: plan.stripSide === page.side }
   const largest = frames.filter(f => f.framed).reduce((best, f) => (!best || f.w * f.h > best.w * best.h ? f : best), null)
   frames.forEach(frame => {
     drawFrame(ctx, frame, page.slots[frame.id], style, images, W, H, unit, page)
@@ -69,7 +69,7 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   // 胶带、邮票等照片框装饰在所有照片之后画，可以压住相邻照片
   frames.forEach(frame => {
     withFrameTransform(ctx, frame, W, H, rect => {
-      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, names })
+      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, names, page })
     })
   })
   ;(layoutPage.texts || []).forEach(block => {

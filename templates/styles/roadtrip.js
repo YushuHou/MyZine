@@ -67,6 +67,15 @@ module.exports = {
     // 虚线路线 + 定位针：约 40% 的正文页（画在照片下面）
     { type: 'route', color: 'accent', width: 4, dash: 14, pinColor: 'accent', pageTypes: ['body'], chance: 0.4 }
   ],
+  // 装饰计划（阶段 7d）：没有大装饰（路线仍按 decorations 出现）；小装饰为线稿 + 行李吊牌
+  ornaments: {
+    small: [
+      { type: 'doodle', weight: 3 },
+      { type: 'luggageTag', size: [250, 300], paper: 'white', band: 'accent', weight: 1.5 }
+    ],
+    smallPerSpread: [1, 2],
+    pageTypes: ['body']
+  },
   layoutWeights: {
     'b-H1L-L1': 3,
     'b-P1-H1P': 3,

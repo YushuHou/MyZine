@@ -79,6 +79,31 @@ function darkStyleOf(style) {
   return darkCache[style.id]
 }
 
+/**
+ * 整本书不重复地从词池取词：每个风格（反色跨页与原风格共用）各自记录已用的词，
+ * 按跨页 id 在未用的词里稳定选取；用完后重新开始，且不和上一个相同
+ * @returns (style, pool, spreadId) => 词（词池为空时返回 ''）
+ */
+function uniquePicker(kind) {
+  const used = {}
+  let last = ''
+  return (style, pool, spreadId) => {
+    if (!pool || !pool.length) return ''
+    const key = style.id.split(':')[0]
+    let set = used[key] || (used[key] = {})
+    let free = pool.filter(w => !set[w])
+    if (!free.length) {
+      set = used[key] = {}
+      free = pool.filter(w => w !== last)
+      if (!free.length) free = pool
+    }
+    const w = free[Math.floor(hashRandom(`${kind}:${spreadId}`) * free.length)]
+    set[w] = true
+    last = w
+    return w
+  }
+}
+
 // 版式中是否有显示装饰词（{word}）的文字槽
 function layoutShowsWord(layout, style) {
   const defs = style.decoText || {}
@@ -118,33 +143,21 @@ function pageLabel(pageType, side) {
  * frameNumbers：正文照片编号 { frameId: n }，整本书连续（有照片的框才编号）
  * word：跨页的装饰词（来自风格 wordPool）。只有版式里真有 {word} 文字槽的跨页才占用一个词；
  *   整本书不重复（每个风格各自记录），词池用完后重新开始，且不和上一个相同
+ * strip：撕纸条上的短句（来自风格 stripPool），每个正文跨页一条，同样整本书不重复
  */
 function getPageList(album) {
   const pages = []
   let bodyNo = 0
   let photoNo = 0
-  // 每个风格已用的词、上一个词
-  const usedWords = {}
-  let lastWord = ''
+  // 装饰词、撕纸条短句：每个风格各自记录已用的，整本书不重复
+  const pickWord = uniquePicker('word')
+  const pickStrip = uniquePicker('strip')
   album.spreads.forEach(spread => {
     const layout = getLayout(spread.layoutId)
     const style = getSpreadStyle(album, spread)
-    const pool = style.wordPool || []
-    let word = ''
-    if (pool.length && spread.pageType === 'body' && layoutShowsWord(layout, style)) {
-      const poolKey = style.id.split(':')[0]
-      let used = usedWords[poolKey] || (usedWords[poolKey] = {})
-      let free = pool.filter(w => !used[w])
-      if (!free.length) {
-        // 词池用完：重新开始（避开上一个词）
-        used = usedWords[poolKey] = {}
-        free = pool.filter(w => w !== lastWord)
-        if (!free.length) free = pool
-      }
-      word = free[Math.floor(hashRandom(`word:${spread.id}`) * free.length)]
-      used[word] = true
-      lastWord = word
-    }
+    const isBody = spread.pageType === 'body'
+    const word = isBody && layoutShowsWord(layout, style) ? pickWord(style, style.wordPool, spread.id) : ''
+    const strip = isBody ? pickStrip(style, style.stripPool, spread.id) : ''
     const sides = layout.span === 'pair' ? ['left', 'right'] : layout.span === 'spread' ? ['full'] : ['single']
     sides.forEach(side => {
       let label = pageLabel(spread.pageType, side)
@@ -169,6 +182,7 @@ function getPageList(album) {
         pageNumbers,
         frameNumbers,
         word,
+        strip,
         pageIndex: pages.length + 1,
         slots: spread.slots,
         info: album.info

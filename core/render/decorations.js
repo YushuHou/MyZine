@@ -6,6 +6,7 @@ const { drawStamp, drawPostmark, drawAirmailBorder } = require('./postcard')
 const { drawOutline, drawHalftone } = require('./paperCraft')
 const { drawPlateRim, drawCornerDoodle, drawCheckerBorder, drawFenceBorder, drawRoute } = require('./themeDeco')
 const { fillPattern, drawPatternBand, drawPatternBlock } = require('./patterns')
+const { drawFrameStrip } = require('./paperBits')
 
 // 风格颜色：可写 colors 中的键名，也可直接写颜色值
 function colorOf(style, value, fallback) {
@@ -240,6 +241,7 @@ function drawPerforation(ctx, style, d, W, H, unit) {
  * - stamp 邮票框 / postmark 邮戳圆环（明信片）：largestOnly 时只画在本页最大的照片框上；minWidth 小于它的框不画
  * - outline 霓虹描边：{ color, width, offset, glow }
  * - plateRim 餐盘沿（圆形框）、cornerDoodle 照片角线稿（见 themeDeco.js）
+ * - tornStrip 撕纸条：斜压在本页最大照片的下角（见 paperBits.js），每跨页最多 1 条，chance 控制出现比例
  * 通用：layer: 'frame' 表示跟着这张照片一起画（会被后面叠上来的照片盖住）
  * - dateStamp 日期戳：画在照片区域内，见 drawDateStamp
  * @param frame  resolveFrames 之后的照片框
@@ -270,7 +272,9 @@ function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {})
       drawPostmark(ctx, style, d, anchor, ctxInfo.info, unit, seed)
     } else if (d.type === 'outline') drawOutline(ctx, style, d, rect, unit)
     else if (d.type === 'plateRim') drawPlateRim(ctx, style, d, frame, rect, unit)
-    else if (d.type === 'cornerDoodle' && names.corner !== null) {
+    else if (d.type === 'tornStrip') {
+      if (names.strip && ctxInfo.isLargest && ctxInfo.page) drawFrameStrip(ctx, style, d, rect, unit, seed, ctxInfo.page)
+    } else if (d.type === 'cornerDoodle' && names.corner !== null) {
       drawCornerDoodle(ctx, style, names.corner ? Object.assign({}, d, { names: [names.corner] }) : d, rect, unit, seed)
     }
   })

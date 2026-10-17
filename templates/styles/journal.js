@@ -31,6 +31,13 @@ module.exports = {
     'Sweet Memories', 'Best Day Ever', 'So Fun', 'Snack Time', 'Little Joys', 'Hello Friend', 'Weekend Mood',
     'Yay!', 'Happy Moments', 'Just Us', 'Oh My!', 'Lovely Day', 'Pocket Notes', 'Sunny Side'
   ],
+  // 撕纸条短句：整本书不重复
+  stripPool: [
+    'best day ever', 'remember this', 'so happy', 'good times', 'tiny adventure', 'oh what a day',
+    'note to self', 'sunny and sweet', 'favorite moment', 'yay us', 'memory lane', 'just perfect',
+    'slow day', 'little trip', 'take me back', 'happy place', 'day well spent', 'laughing a lot',
+    'all smiles', 'sweet treat'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'caveat', family: 'serif', size: 120, color: 'accent' }, minScale: 0.5 },
     kicker: { text: '{month} {year}', font: { glyph: 'caveat', family: 'serif', size: 44, color: 'textMuted' } }
@@ -77,7 +84,9 @@ module.exports = {
       height: 46,
       placement: 'top',
       angleJitter: 10
-    }
+    },
+    // 撕纸条（阶段 7d）：横线本子纸 + 手写体，斜压在照片下角，约 60% 的跨页有一条
+    { type: 'tornStrip', paper: 'lined', size: [240, 340], height: 78, chance: 0.6, text: ['pool', 'place'], font: { glyph: 'caveat', family: 'serif', size: 44, color: 'text' } }
   ],
   decorations: [],
   // 装饰计划（阶段 7c）：大装饰为整页手账纸底纹；小装饰 2–3 个（线稿、护照章、方印）
@@ -88,7 +97,8 @@ module.exports = {
     small: [
       { type: 'doodle', weight: 4 },
       { type: 'passport', size: [160, 190], count: [1, 2], colors: ['#7FA79B', '#D9825B', '#8C7BB0'], weight: 1 },
-      { type: 'seal', size: [120, 150], weight: 1 }
+      { type: 'seal', size: [120, 150], weight: 1 },
+      { type: 'luggageTag', size: [240, 290], paper: 'white', band: 'accent', weight: 1 }
     ],
     smallPerSpread: [2, 3],
     pageTypes: ['body']

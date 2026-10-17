@@ -59,7 +59,8 @@ module.exports = {
     ],
     small: [
       { type: 'passport', size: [180, 210], count: [2, 3], colors: ['blue', 'accent', '#4F6B4A'], weight: 2 },
-      { type: 'seal', size: [120, 150], weight: 1 }
+      { type: 'seal', size: [120, 150], weight: 1 },
+      { type: 'luggageTag', size: [260, 310], paper: 'paper', band: 'blue', weight: 1.5 }
     ],
     smallPerSpread: [2, 2],
     pageTypes: ['body']

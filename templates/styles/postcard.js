@@ -85,7 +85,8 @@ module.exports = {
     ],
     small: [
       { type: 'doodle', weight: 3 },
-      { type: 'passport', size: [170, 200], count: [1, 2], colors: ['accent', 'red'], weight: 1 }
+      { type: 'passport', size: [170, 200], count: [1, 2], colors: ['accent', 'red'], weight: 1 },
+      { type: 'luggageTag', size: [240, 290], paper: 'white', band: 'red', weight: 0.8 }
     ],
     smallPerSpread: [2, 3],
     pageTypes: ['body']

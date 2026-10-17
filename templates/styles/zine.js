@@ -29,6 +29,12 @@ module.exports = {
     'Side Streets', 'Off Grid', 'DIY', 'Zine Scene', 'Loud & Clear', 'Weird & Wonderful', 'Free Spirit',
     'Out Loud', 'Xerox Club', 'Back Pages', 'Paper Cuts', 'Side B', 'Fringe', 'Wild Card', 'Street Level'
   ],
+  // 撕纸条短句：整本书不重复
+  stripPool: [
+    'No Filter', 'Stay Weird', 'Cut Here', 'Do It Yourself', 'Print & Fold', 'Loud', 'Free Pass',
+    'Limited Run', 'Issue 01', 'Take One', 'Not for Sale', 'Handmade', 'Side A', 'Zero Budget', 'Photocopy',
+    'Stapled', 'Back Alley', 'First Draft', 'Underground', 'All Ages'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'oswald', family: 'sans-serif', size: 130, uppercase: true, color: 'accent' }, minScale: 0.45 },
     kicker: { text: '{location} / {year}', font: { glyph: 'oswald', family: 'sans-serif', size: 26, letterSpacing: 4, uppercase: true, color: 'blue' } },
@@ -53,6 +59,15 @@ module.exports = {
     { type: 'halftone', color: 'accent', x: 0, y: 0.6, w: 0.46, h: 0.3, dot: 9, gap: 20, fade: 0.85, mirror: true, chance: 0.5, pageTypes: ['body'] },
     { type: 'halftone', color: 'blue', x: 0.6, y: 0, w: 0.4, h: 0.22, dot: 7, gap: 18, fade: 0.9, mirror: true, chance: 0.35, pageTypes: ['body'] }
   ],
+  // 装饰计划（阶段 7d）：没有大装饰；小装饰为线稿 + 留白处的牛皮纸撕纸条
+  ornaments: {
+    small: [
+      { type: 'doodle', weight: 3 },
+      { type: 'tornStrip', size: [240, 330], paper: 'kraft', height: 68, text: ['pool', 'place'], font: { glyph: 'oswald', family: 'sans-serif', size: 32, letterSpacing: 3, uppercase: true, color: 'text' }, weight: 2 }
+    ],
+    smallPerSpread: [1, 3],
+    pageTypes: ['body']
+  },
   layoutWeights: {
     'b-ST-L1T': 2,
     'b-ST-P1': 2,
