@@ -1,0 +1,77 @@
+.page {
+  padding: 24rpx 32rpx 60rpx;
+}
+.env {
+  font-size: 24rpx;
+  color: #8A847A;
+}
+.results {
+  margin-top: 20rpx;
+  padding: 8rpx 24rpx;
+  background: #FFFFFF;
+  border-radius: 16rpx;
+}
+.row {
+  display: flex;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #EEE9E0;
+}
+.mark {
+  width: 48rpx;
+  flex-shrink: 0;
+}
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+.name {
+  font-size: 28rpx;
+}
+.detail {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #8A847A;
+  word-break: break-all;
+}
+.running {
+  padding: 16rpx 0;
+  font-size: 26rpx;
+  color: #8A847A;
+}
+.section-title {
+  margin: 28rpx 0 12rpx;
+  font-size: 24rpx;
+  color: #8A847A;
+}
+.canvas {
+  background: #FFFFFF;
+  border-radius: 8rpx;
+}
+.actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 28rpx;
+}
+.half {
+  flex: 1;
+  width: auto !important;
+  margin: 0 !important;
+}
+
+.web-fonts {
+  padding: 16rpx 24rpx;
+  background: #FFFFFF;
+  border-radius: 16rpx;
+}
+.web-row {
+  padding: 8rpx 0;
+}
+.web-label {
+  display: block;
+  font-size: 22rpx;
+  color: #8A847A;
+}
+.web-sample {
+  font-size: 44rpx;
+  color: #2B2B2B;
+}

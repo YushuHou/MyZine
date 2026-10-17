@@ -54,6 +54,10 @@
     </view>
   </block>
 
+  <view wx:if="{{devTools}}" class="dev-links">
+    <text bindtap="onDevCheck">开发工具：素材方案验证</text>
+  </view>
+
   <view class="footer">
     <block wx:if="{{hasBook}}">
       <button class="btn-secondary footer-btn" disabled="{{!photos.length}}" bindtap="onRelayout">重新排版</button>

@@ -1,0 +1,8 @@
+<!-- 字体授权 -->
+<view class="page">
+  <view class="tip">本小程序使用以下开源西文字体，均以 SIL Open Font License 1.1 授权</view>
+  <view wx:for="{{licenses}}" wx:key="family" class="item">
+    <view class="family">{{item.family}}</view>
+    <text class="text" user-select>{{item.text}}</text>
+  </view>
+</view>

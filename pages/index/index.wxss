@@ -160,6 +160,15 @@
   font-size: 26rpx;
 }
 
+/* 开发工具入口（正式版不显示） */
+.dev-links {
+  margin-top: 40rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #B9B2A6;
+  text-decoration: underline;
+}
+
 /* 底部按钮 */
 .footer {
   position: fixed;

@@ -1,0 +1,31 @@
+<!-- 开发验证页：素材方案（分包 JS / Data URL 字体 / Data URL 图片） -->
+<view class="page">
+  <view class="env">{{env}}</view>
+
+  <view class="results">
+    <view wx:for="{{results}}" wx:key="name" class="row">
+      <text class="mark">{{item.ok ? '✅' : '❌'}}</text>
+      <view class="row-main">
+        <view class="name">{{item.name}}</view>
+        <view class="detail">{{item.detail}}</view>
+      </view>
+    </view>
+    <view wx:if="{{running}}" class="running">检测中…</view>
+  </view>
+
+  <view class="section-title">页面普通文字（非画布）：每行应是不同字体</view>
+  <view class="web-fonts">
+    <view wx:for="{{webFonts}}" wx:key="*this" class="web-row">
+      <text class="web-label">{{item}}</text>
+      <text class="web-sample" style="font-family: {{item}};">Good Days 07 · 新西兰</text>
+    </view>
+  </view>
+
+  <view class="section-title">画布肉眼对比（每行应是不同字体，最后一行是系统衬线体）</view>
+  <canvas type="2d" id="checkCanvas" class="canvas" style="width: {{canvasW}}px; height: {{canvasH}}px;"></canvas>
+
+  <view class="actions">
+    <button class="btn-secondary half" bindtap="onRerun" disabled="{{running}}">重新检测</button>
+    <button class="btn-primary half" bindtap="onCopy">复制结果</button>
+  </view>
+</view>

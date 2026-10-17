@@ -5,6 +5,7 @@ const { choosePhotos } = require('../../core/photos')
 const { buildBook } = require('../../core/book')
 const { getFieldText } = require('../../core/bookInfo')
 const { getStyle } = require('../../core/registry')
+const { showDevTools } = require('../../core/devConfig')
 const { privacyErrorText } = require('../../core/wxp')
 const { createGrid, moveItem } = require('../../core/ui/sortable')
 
@@ -25,11 +26,13 @@ Page({
     hasBook: false,
     infoTitle: '',
     infoSub: '',
-    styleName: ''
+    styleName: '',
+    devTools: false
   },
 
   onLoad() {
     if (!app.globalData.album) app.globalData.album = createAlbum()
+    this.setData({ devTools: showDevTools() })
     const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()
     const rpx = info.windowWidth / 750
     this.grid = createGrid(info.windowWidth - PAGE_PADDING_RPX * 2 * rpx, COLUMNS, GAP_RPX * rpx, 1)
@@ -86,6 +89,11 @@ Page({
 
   onEditInfo() {
     wx.navigateTo({ url: '/pages/info/info' })
+  },
+
+  // 开发工具（正式版不显示）
+  onDevCheck() {
+    wx.navigateTo({ url: '/dev/check/check' })
   },
 
   onChangeTemplate() {

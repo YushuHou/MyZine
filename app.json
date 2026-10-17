@@ -8,6 +8,18 @@
     "pages/export/export",
     "pages/templates/templates"
   ],
+  "subpackages": [
+    {
+      "root": "pkg-fonts",
+      "name": "fonts",
+      "pages": ["license/license"]
+    },
+    {
+      "root": "dev",
+      "name": "dev",
+      "pages": ["check/check"]
+    }
+  ],
   "window": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "MyZine",

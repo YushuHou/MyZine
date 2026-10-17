@@ -10,6 +10,14 @@
       {
         "type": "file",
         "value": "CLAUDE.md"
+      },
+      {
+        "type": "folder",
+        "value": "licenses"
+      },
+      {
+        "type": "file",
+        "value": "README.md"
       }
     ],
     "include": []
