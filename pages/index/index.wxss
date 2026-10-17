@@ -1,62 +1,144 @@
-/**index.wxss**/
-page {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.scrollarea {
-  flex: 1;
-  overflow-y: hidden;
+/** 首页 **/
+.page {
+  padding: 24rpx 32rpx calc(200rpx + env(safe-area-inset-bottom));
 }
 
-.userinfo {
+.header {
+  padding: 16rpx 0 32rpx;
+}
+.title {
+  font-size: 56rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+.subtitle {
+  margin-top: 8rpx;
+  color: #8A847A;
+}
+
+/* 空状态 */
+.empty {
+  margin-top: 60rpx;
+  height: 480rpx;
+  border: 4rpx dashed #C9C1B3;
+  border-radius: 24rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #aaa;
-  width: 80%;
+  justify-content: center;
+  color: #8A847A;
+}
+.empty-plus {
+  font-size: 120rpx;
+  line-height: 1;
+  color: #B5835A;
+}
+.empty-text {
+  margin-top: 16rpx;
+  font-size: 34rpx;
+  color: #2B2B2B;
+}
+.empty-hint {
+  margin-top: 12rpx;
+  font-size: 26rpx;
 }
 
-.userinfo-avatar {
+/* 照片网格 */
+.count {
+  margin-bottom: 16rpx;
+  color: #8A847A;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12rpx;
+}
+.cell {
+  position: relative;
+  padding-top: 100%;
+  border-radius: 12rpx;
   overflow: hidden;
-  width: 128rpx;
-  height: 128rpx;
-  margin: 20rpx;
-  border-radius: 50%;
+  background: #E6E1D8;
 }
-
-.usermotto {
-  margin-top: 200px;
-}
-
-.avatar-wrapper {
-  padding: 0;
-  width: 56px !important;
-  border-radius: 8px;
-  margin-top: 40px;
-  margin-bottom: 40px;
-}
-
-.avatar {
-  display: block;
-  width: 56px;
-  height: 56px;
-}
-
-.nickname-wrapper {
-  display: flex;
+.thumb {
+  position: absolute;
+  left: 0;
+  top: 0;
   width: 100%;
-  padding: 16px;
+  height: 100%;
+}
+.no,
+.badge {
+  position: absolute;
+  left: 8rpx;
+  padding: 0 12rpx;
+  border-radius: 8rpx;
+  background: rgba(0, 0, 0, 0.5);
+  color: #FFFFFF;
+  font-size: 22rpx;
+  line-height: 36rpx;
+}
+.no {
+  top: 8rpx;
+}
+.badge {
+  bottom: 8rpx;
+}
+.remove {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 56rpx;
+  height: 56rpx;
+  line-height: 52rpx;
+  text-align: center;
+  font-size: 36rpx;
+  color: #FFFFFF;
+  background: rgba(0, 0, 0, 0.45);
+  border-bottom-left-radius: 12rpx;
+}
+
+/* 继续添加格子 */
+.add-cell {
+  background: #FFFFFF;
+  border: 4rpx dashed #B5835A;
   box-sizing: border-box;
-  border-top: .5px solid rgba(0, 0, 0, 0.1);
-  border-bottom: .5px solid rgba(0, 0, 0, 0.1);
-  color: black;
+}
+.add-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #B5835A;
+}
+.add-plus {
+  font-size: 72rpx;
+  line-height: 1;
+}
+.add-text {
+  margin-top: 8rpx;
+  font-size: 26rpx;
 }
 
-.nickname-label {
-  width: 105px;
+/* 底部按钮 */
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: rgba(246, 244, 239, 0.96);
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
 }
-
-.nickname-input {
+.footer-btn {
   flex: 1;
+  width: auto !important;
+  margin: 0 !important;
 }

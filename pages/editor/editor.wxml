@@ -1,0 +1,21 @@
+<!-- 编辑页：一屏一页 -->
+<view class="page">
+  <view class="stage" bindtouchstart="onTouchStart" bindtouchend="onTouchEnd">
+    <canvas type="2d" id="pageCanvas" class="page-canvas" style="width: {{canvasW}}px; height: {{canvasH}}px;"></canvas>
+  </view>
+
+  <view class="toolbar">
+    <view class="pager">
+      <button class="nav" size="mini" disabled="{{current <= 0}}" bindtap="onPrev">上一页</button>
+      <view class="pager-text">{{current + 1}} / {{total}}</view>
+      <button class="nav" size="mini" disabled="{{current >= total - 1}}" bindtap="onNext">下一页</button>
+    </view>
+    <view class="actions">
+      <view class="guide-switch">
+        <text>参考线</text>
+        <switch checked="{{guides}}" color="#B5835A" bindchange="onToggleGuides" />
+      </view>
+      <button class="btn-primary save-btn" disabled="{{saving}}" bindtap="onSave">保存本页到相册</button>
+    </view>
+  </view>
+</view>

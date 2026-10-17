@@ -1,49 +1,62 @@
-// index.js
-const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
+// 首页：导入照片，开始制作
+const app = getApp()
+const { createAlbum, addPhotos, removePhoto } = require('../../core/album')
+const { choosePhotos } = require('../../core/photos')
+const { autoLayout } = require('../../core/autoLayout')
+const { privacyErrorText } = require('../../core/wxp')
+
+const ORIENTATION_LABELS = { landscape: '横', portrait: '竖', square: '方' }
 
 Page({
   data: {
-    motto: 'Hello World',
-    userInfo: {
-      avatarUrl: defaultAvatarUrl,
-      nickName: '',
-    },
-    hasUserInfo: false,
-    canIUseGetUserProfile: wx.canIUse('getUserProfile'),
-    canIUseNicknameComp: wx.canIUse('input.type.nickname'),
+    photos: []
   },
-  bindViewTap() {
-    wx.navigateTo({
-      url: '../logs/logs'
-    })
+
+  onLoad() {
+    if (!app.globalData.album) app.globalData.album = createAlbum()
   },
-  onChooseAvatar(e) {
-    const { avatarUrl } = e.detail
-    const { nickName } = this.data.userInfo
+
+  onShow() {
+    this.refresh()
+  },
+
+  refresh() {
+    const album = app.globalData.album
     this.setData({
-      "userInfo.avatarUrl": avatarUrl,
-      hasUserInfo: nickName && avatarUrl && avatarUrl !== defaultAvatarUrl,
+      photos: album.photos.map(p => ({ id: p.id, src: p.displayPath, label: ORIENTATION_LABELS[p.orientation] }))
     })
   },
-  onInputChange(e) {
-    const nickName = e.detail.value
-    const { avatarUrl } = this.data.userInfo
-    this.setData({
-      "userInfo.nickName": nickName,
-      hasUserInfo: nickName && avatarUrl && avatarUrl !== defaultAvatarUrl,
-    })
+
+  async onAddPhotos() {
+    if (this.busy) return
+    this.busy = true
+    try {
+      const res = await choosePhotos((done, total) => {
+        wx.showLoading({ title: `读取照片 ${done + 1}/${total}`, mask: true })
+      })
+      if (res.cancelled) return
+      wx.hideLoading()
+      addPhotos(app.globalData.album, res.photos)
+      this.refresh()
+      if (res.failed) wx.showToast({ title: `${res.failed} 张照片读取失败`, icon: 'none' })
+    } catch (err) {
+      console.error('选择照片失败', err)
+      wx.hideLoading()
+      wx.showToast({ title: privacyErrorText(err) || '选择照片失败', icon: 'none' })
+    } finally {
+      this.busy = false
+    }
   },
-  getUserProfile(e) {
-    // 推荐使用wx.getUserProfile获取用户信息，开发者每次通过该接口获取用户个人信息均需用户确认，开发者妥善保管用户快速填写的头像昵称，避免重复弹窗
-    wx.getUserProfile({
-      desc: '展示用户信息', // 声明获取用户个人信息后的用途，后续会展示在弹窗中，请谨慎填写
-      success: (res) => {
-        console.log(res)
-        this.setData({
-          userInfo: res.userInfo,
-          hasUserInfo: true
-        })
-      }
-    })
+
+  onRemove(e) {
+    removePhoto(app.globalData.album, e.currentTarget.dataset.id)
+    this.refresh()
   },
+
+  onStart() {
+    const album = app.globalData.album
+    if (!album.photos.length) return
+    album.spreads = autoLayout(album)
+    wx.navigateTo({ url: '/pages/editor/editor' })
+  }
 })

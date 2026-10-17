@@ -1,10 +1,27 @@
-/**app.wxss**/
-.container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 200rpx 0;
-  box-sizing: border-box;
-} 
+/** app.wxss 全局样式 **/
+page {
+  background: #F6F4EF;
+  color: #2B2B2B;
+  font-size: 28rpx;
+}
+
+/* 主按钮 */
+.btn-primary {
+  background: #2B2B2B !important;
+  color: #FFFFFF !important;
+  border-radius: 999rpx !important;
+  font-size: 30rpx !important;
+}
+.btn-primary[disabled] {
+  background: #C9C1B3 !important;
+  color: #FFFFFF !important;
+}
+
+/* 次按钮 */
+.btn-secondary {
+  background: #FFFFFF !important;
+  color: #B5835A !important;
+  border: 2rpx solid #B5835A !important;
+  border-radius: 999rpx !important;
+  font-size: 30rpx !important;
+}

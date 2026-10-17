@@ -1,27 +1,36 @@
-<!--index.wxml-->
-<scroll-view class="scrollarea" scroll-y type="list">
-  <view class="container">
-    <view class="userinfo">
-      <block wx:if="{{canIUseNicknameComp && !hasUserInfo}}">
-        <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
-          <image class="avatar" src="{{userInfo.avatarUrl}}"></image>
-        </button>
-        <view class="nickname-wrapper">
-          <text class="nickname-label">昵称</text>
-          <input type="nickname" class="nickname-input" placeholder="请输入昵称" bind:change="onInputChange" />
-        </view>
-      </block>
-      <block wx:elif="{{!hasUserInfo}}">
-        <button wx:if="{{canIUseGetUserProfile}}" bindtap="getUserProfile"> 获取头像昵称 </button>
-        <view wx:else> 请使用2.10.4及以上版本基础库 </view>
-      </block>
-      <block wx:else>
-        <image bindtap="bindViewTap" class="userinfo-avatar" src="{{userInfo.avatarUrl}}" mode="cover"></image>
-        <text class="userinfo-nickname">{{userInfo.nickName}}</text>
-      </block>
-    </view>
-    <view class="usermotto">
-      <text class="user-motto">{{motto}}</text>
-    </view>
+<!-- 首页：导入照片 -->
+<view class="page">
+  <view class="header">
+    <view class="title">MyZine</view>
+    <view class="subtitle">把旅行照片做成照片书</view>
   </view>
-</scroll-view>
+
+  <view wx:if="{{!photos.length}}" class="empty" bindtap="onAddPhotos">
+    <view class="empty-plus">+</view>
+    <view class="empty-text">添加照片</view>
+    <view class="empty-hint">单次最多 20 张，可多次添加</view>
+  </view>
+
+  <block wx:else>
+    <view class="count">已选 {{photos.length}} 张，按选择顺序排版</view>
+    <view class="grid">
+      <view class="cell" wx:for="{{photos}}" wx:key="id">
+        <image class="thumb" src="{{item.src}}" mode="aspectFill" lazy-load />
+        <view class="no">{{index + 1}}</view>
+        <view class="badge">{{item.label}}</view>
+        <view class="remove" data-id="{{item.id}}" catchtap="onRemove">×</view>
+      </view>
+      <view class="cell add-cell" bindtap="onAddPhotos">
+        <view class="add-inner">
+          <view class="add-plus">+</view>
+          <view class="add-text">继续添加</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view class="footer">
+    <button wx:if="{{photos.length}}" class="btn-secondary footer-btn" bindtap="onAddPhotos">继续添加照片</button>
+    <button class="btn-primary footer-btn" disabled="{{!photos.length}}" bindtap="onStart">开始制作</button>
+  </view>
+</view>
