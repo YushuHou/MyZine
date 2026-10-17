@@ -29,13 +29,28 @@
     </view>
   </view>
 
+  <!-- 页面缩略图条：按跨页成对显示（封面、封底单页），当前页黄色下划线，点击跳转 -->
+  <scroll-view scroll-x class="strip" scroll-into-view="{{stripInto}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
+    <view class="strip-inner">
+      <view wx:for="{{strip}}" wx:key="id" id="st-{{item.id}}" class="strip-item strip-{{item.kind}}">
+        <view class="strip-thumb">
+          <image wx:if="{{item.thumb}}" class="strip-img strip-img-{{item.kind}}" src="{{item.thumb}}" />
+          <view class="strip-hits">
+            <view wx:for="{{item.sides}}" wx:for-item="side" wx:key="*this" class="strip-hit" data-id="{{item.id}}" data-side="{{side}}" bindtap="onStripTap"></view>
+          </view>
+        </view>
+        <view wx:if="{{stripActive.id === item.id}}" class="strip-line strip-line-{{stripActive.side}}"></view>
+      </view>
+    </view>
+  </scroll-view>
+
   <!-- 底部标签栏：图标在上、文字在下 -->
   <view class="tabbar">
     <!-- 普通状态 -->
     <block wx:if="{{mode === 'normal'}}">
       <view class="tab" bindtap="onEditInfo">
         <image class="tab-icon" src="/assets/icons/book.svg" />
-        <text class="tab-text">书籍信息</text>
+        <text class="tab-text">编辑信息</text>
       </view>
       <view class="tab" bindtap="onManagePages">
         <image class="tab-icon" src="/assets/icons/pages.svg" />

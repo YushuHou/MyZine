@@ -1,11 +1,11 @@
-<!-- 书籍信息：全部选填 -->
+<!-- 照片书信息：全部选填 -->
 <view class="page">
   <view class="tip">以下内容都可以不填，空着的项目不会出现在书里</view>
 
   <view class="form">
     <view class="field">
       <view class="label">书名</view>
-      <input class="input" value="{{info.title}}" data-field="title" maxlength="20" placeholder="例如：京都七日" bindinput="onInput" />
+      <input class="input" value="{{info.title}}" data-field="title" maxlength="20" placeholder="例如：川西七日" bindinput="onInput" />
     </view>
     <view class="field">
       <view class="label">作者</view>
@@ -17,7 +17,7 @@
     </view>
     <view class="field">
       <view class="label">旅行地点</view>
-      <input class="input" value="{{info.location}}" data-field="location" maxlength="20" placeholder="例如：日本 · 京都" bindinput="onInput" />
+      <input class="input" value="{{info.location}}" data-field="location" maxlength="20" placeholder="例如：四川 · 甘孜" bindinput="onInput" />
     </view>
 
     <view class="field">

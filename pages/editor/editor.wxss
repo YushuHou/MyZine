@@ -87,6 +87,88 @@ page {
   color: var(--color-text);
 }
 
+/* 页面缩略图条 */
+.strip {
+  flex-shrink: 0;
+  height: 108rpx;
+  white-space: nowrap;
+}
+.strip-inner {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 8rpx 24rpx 0;
+}
+.strip-item {
+  position: relative;
+  flex-shrink: 0;
+  padding-bottom: 14rpx;
+}
+/* 缩略图：左右页成对 3:2，封面 / 封底单页 3:4，高度相同 */
+.strip-thumb {
+  position: relative;
+  height: 80rpx;
+  overflow: hidden;
+  background: var(--color-desk);
+  box-shadow: 0 2rpx 6rpx var(--color-shadow);
+}
+.strip-pair .strip-thumb,
+.strip-full .strip-thumb {
+  width: 120rpx;
+}
+.strip-cover .strip-thumb,
+.strip-back .strip-thumb {
+  width: 60rpx;
+}
+.strip-img {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  left: 0;
+}
+/* 单页只显示跨页图的一半：封面在右半，封底在左半 */
+.strip-img-cover,
+.strip-img-back {
+  width: 200%;
+}
+.strip-img-cover {
+  left: -100%;
+}
+/* 点击区：左右页成对时分成两半，点哪半跳到哪一页 */
+.strip-hits {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+}
+.strip-hit {
+  flex: 1;
+}
+/* 当前页：柯达黄下划线（左右页成对时只划在当前那一半下面） */
+.strip-line {
+  position: absolute;
+  bottom: 4rpx;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: var(--color-accent);
+}
+.strip-line-left {
+  left: 0;
+  width: 50%;
+}
+.strip-line-right {
+  left: 50%;
+  width: 50%;
+}
+.strip-line-full,
+.strip-line-single {
+  left: 0;
+  width: 100%;
+}
+
 /* 底部标签栏 */
 .tabbar {
   flex-shrink: 0;

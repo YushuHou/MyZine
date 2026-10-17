@@ -1,4 +1,4 @@
-<!-- 首页：书籍信息 + 导入照片 -->
+<!-- 首页：照片书信息 + 导入照片 -->
 <wxs src="../../core/ui/sortable.wxs" module="sortable" />
 <view class="page">
   <view class="header">
@@ -8,8 +8,8 @@
 
   <view class="info-card" bindtap="onEditInfo">
     <view class="info-main">
-      <view class="info-title {{infoTitle ? '' : 'info-empty'}}">{{infoTitle || '书籍信息'}}</view>
-      <view class="info-sub">{{infoSub || (infoTitle ? '点击修改书籍信息' : '书名、作者、旅行地点等，点击填写（选填）')}}</view>
+      <view class="info-title {{infoTitle ? '' : 'info-empty'}}">{{infoTitle || '照片书信息'}}</view>
+      <view class="info-sub">{{infoSub || (infoTitle ? '点击修改照片书信息' : '书名、作者、旅行地点等，点击填写（选填）')}}</view>
     </view>
     <view class="info-arrow">›</view>
   </view>

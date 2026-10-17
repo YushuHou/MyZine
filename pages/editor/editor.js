@@ -2,7 +2,7 @@
 // 布局：顶部栏（参考线 + 导出）→ 画布 → 翻页行 → 底部标签栏（书籍信息 / 页面 / 模板 / 预览）
 const app = getApp()
 const { getPageList, getSpread, getSpreadPhotos, getSpreadStyle, getPhoto, setSlotPhoto, getSpreadLabels } = require('../../core/album')
-const { createSpreadImageRenderer } = require('../../core/render/spreadImages')
+const { createSpreadImageRenderer, getThumbRenderer } = require('../../core/render/spreadImages')
 const UI_COLORS = require('../../core/uiColors')
 const { getLayout, getLayoutPage } = require('../../core/registry')
 const { renderPage } = require('../../core/render/renderPage')
@@ -14,8 +14,8 @@ const { loadRenderImages } = require('../../core/styleAssets')
 const C = require('../../core/constants')
 const { getPhotoUsage, formatUsage } = require('../../core/usage')
 
-// 画布区以外（顶部栏 + 翻页行 + 底部标签栏）的估计高度（px），量到画布区实际高度之前先用它
-const CHROME_ESTIMATE = 136
+// 画布区以外（顶部栏 + 翻页行 + 缩略图条 + 底部标签栏）的估计高度（px），量到画布区实际高度之前先用它
+const CHROME_ESTIMATE = 190
 // 画布四周留白（px）
 const STAGE_PAD_X = 16
 const STAGE_PAD_Y = 8
@@ -74,7 +74,11 @@ Page({
     // 「相册不会保存」提示条
     saveNotice: false,
     pickerPhotos: [],
-    pickerCurrentId: ''
+    pickerCurrentId: '',
+    // 页面缩略图条：[{ id, kind: pair | full | cover | back, sides, thumb }]；当前页 { id, side }
+    strip: [],
+    stripActive: { id: '', side: '' },
+    stripInto: ''
   },
 
   onLoad() {
@@ -87,7 +91,9 @@ Page({
     this.windowInfo = getWindowInfo()
     this.stageSize = estimateStage(this.windowInfo)
     const size = computeCanvasSize(this.stageSize, this.pages[0].side)
+    this.thumbRenderer = getThumbRenderer()
     this.setData({ canvasW: size.w, canvasH: size.h, total: this.pages.length, label: this.pages[0].label })
+    this.refreshStrip()
   },
 
   onReady() {
@@ -158,6 +164,7 @@ Page({
     this.selectedFrameId = null
     this.setData({ current: index, total: this.pages.length, label: this.pages[index].label, mode: 'normal' })
     this.updateCanvasSize(() => this.draw())
+    this.refreshStrip()
   },
 
   onCloseNotice() {
@@ -236,9 +243,13 @@ Page({
 
   goTo(index) {
     if (index < 0 || index >= this.pages.length || index === this.data.current) return
+    // 选中照片框时直接翻页：照片可能刚换过，顺便更新缩略图
+    const edited = this.data.mode !== 'normal'
     this.selectedFrameId = null
     this.setData({ current: index, label: this.pages[index].label, mode: 'normal' })
     this.updateCanvasSize(() => this.draw())
+    if (edited) this.refreshStrip()
+    else this.updateStripActive()
   },
 
   onPrev() {
@@ -364,6 +375,8 @@ Page({
     if (this.data.mode === 'normal') return
     this.selectedFrameId = null
     this.setData({ mode: 'normal' }, () => this.drawNow())
+    // 照片可能换过、调整过：更新这一对页面的缩略图
+    this.refreshStrip()
   },
 
   onResetAdjust() {
@@ -482,5 +495,61 @@ Page({
     this.selectedFrameId = null
     this.setData({ mode: 'normal', label: this.pages[this.data.current].label })
     this.draw()
+    this.refreshStrip()
+  },
+
+  // ---------- 页面缩略图条 ----------
+
+  /**
+   * 重建缩略图条：每个跨页一项（封面、封底单页），缩略图用页面管理共用的缓存渲染器；
+   * 内容变了的跨页先保留旧图，新图生成后替换
+   */
+  refreshStrip() {
+    const groups = {}
+    this.pages.forEach(p => { (groups[p.spreadId] = groups[p.spreadId] || []).push(p.side) })
+    const old = {}
+    this.data.strip.forEach(item => { old[item.id] = item.thumb })
+    const strip = this.album.spreads.map(spread => {
+      const sides = groups[spread.id] || []
+      const kind = sides[0] === 'full' ? 'full' : sides[0] === 'single' ? (spread.pageType === 'back' ? 'back' : 'cover') : 'pair'
+      return { id: spread.id, kind, sides, thumb: this.thumbRenderer.cached(this.album, spread) || old[spread.id] || '' }
+    })
+    this.setData({ strip }, () => this.updateStripActive())
+    this.renderStripThumbs()
+  },
+
+  // 当前页的下划线，并把它滚到可见位置
+  updateStripActive() {
+    const page = this.pages[this.data.current]
+    if (!page) return
+    this.setData({ stripActive: { id: page.spreadId, side: page.side }, stripInto: `st-${page.spreadId}` })
+  },
+
+  // 逐个生成缺少（或已过期）的缩略图：当前页附近的先生成
+  async renderStripThumbs() {
+    const token = this.stripToken = (this.stripToken || 0) + 1
+    const spreads = this.album.spreads.slice()
+    const cur = spreads.findIndex(s => s.id === (this.pages[this.data.current] || {}).spreadId)
+    spreads.sort((a, b) => Math.abs(spreads.indexOf(a) - cur) - Math.abs(spreads.indexOf(b) - cur))
+    for (const spread of spreads) {
+      if (token !== this.stripToken) return
+      if (this.thumbRenderer.cached(this.album, spread)) continue
+      let path
+      try {
+        path = await this.thumbRenderer.render(this.album, spread)
+      } catch (err) {
+        console.warn('生成缩略图失败', err)
+        continue
+      }
+      if (token !== this.stripToken) return
+      const i = this.data.strip.findIndex(item => item.id === spread.id)
+      if (i >= 0) this.setData({ [`strip[${i}].thumb`]: path })
+    }
+  },
+
+  onStripTap(e) {
+    const { id, side } = e.currentTarget.dataset
+    const index = this.pages.findIndex(p => p.spreadId === id && p.side === side)
+    if (index >= 0) this.goTo(index)
   }
 })
