@@ -86,3 +86,30 @@ page {
   font-size: 26rpx;
   color: #8A847A;
 }
+
+/* 「相册不会保存」提示条：浮在页面顶部，不影响画布位置 */
+.save-notice {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  top: 16rpx;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  padding: 20rpx 24rpx;
+  font-size: 26rpx;
+  line-height: 1.5;
+  color: #FFFFFF;
+  background: rgba(43, 43, 43, 0.92);
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+}
+.save-notice-text {
+  flex: 1;
+}
+.save-notice-close {
+  margin-left: 16rpx;
+  font-size: 32rpx;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.7);
+}

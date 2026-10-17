@@ -1,0 +1,93 @@
+// 立体翻书的触摸与动画（WXS 在视图层运行：拖动时书页跟手旋转，不经过逻辑层）
+// 页面实现 onFlipStart({ dir })、onFlipEnd({ dir, angle })、onFlipTap({ side })；
+// 页面通过 cmd 数据（{ action: 'auto' | 'finish' | 'cancel' | 'reset', dir, id }）让这里播放过渡动画
+
+var st = {}
+
+function clamp(v, min, max) {
+  return v < min ? min : v > max ? max : v
+}
+
+function setLeaf(owner, angle, dir, transition) {
+  var leaf = owner.selectComponent('#leaf')
+  if (!leaf) return
+  // 向后翻（下一页）：书页在右半边，绕左边（书脊）向左翻，角度为负
+  var deg = dir === 'next' ? -angle : angle
+  leaf.setStyle({ transform: 'rotateY(' + deg + 'deg)', transition: transition || 'none' })
+}
+
+function start(e, owner) {
+  var t = e.touches[0]
+  var ds = e.currentTarget.dataset
+  st = {
+    x0: t.clientX,
+    y0: t.clientY,
+    left: parseFloat(ds.left),
+    width: parseFloat(ds.width),
+    canNext: ds.cannext == 1,
+    canPrev: ds.canprev == 1,
+    active: false,
+    blocked: false,
+    moved: false
+  }
+}
+
+function move(e, owner) {
+  if (st.x0 === undefined) return
+  var t = e.touches[0]
+  var dx = t.clientX - st.x0
+  if (Math.abs(dx) > 8 || Math.abs(t.clientY - st.y0) > 8) st.moved = true
+  if (!st.active) {
+    if (st.blocked || Math.abs(dx) < 8) return false
+    // 方向以拖动方向为准：向左拖翻到下一页，向右拖翻回上一页
+    st.dir = dx < 0 ? 'next' : 'prev'
+    if ((st.dir === 'next' && !st.canNext) || (st.dir === 'prev' && !st.canPrev)) {
+      st.blocked = true
+      return false
+    }
+    st.active = true
+    owner.callMethod('onFlipStart', { dir: st.dir })
+  }
+  // 拖过半个书宽 = 翻到 90°，拖过整个书宽 = 翻完
+  var dist = st.dir === 'next' ? -dx : dx
+  st.angle = clamp(dist / (st.width / 2) * 90, 0, 180)
+  setLeaf(owner, st.angle, st.dir)
+  return false
+}
+
+function end(e, owner) {
+  if (st.x0 === undefined) return
+  if (st.active) {
+    owner.callMethod('onFlipEnd', { dir: st.dir, angle: st.angle || 0 })
+  } else if (!st.moved) {
+    // 轻点：点右半边翻到下一页，点左半边翻回上一页
+    owner.callMethod('onFlipTap', { side: st.x0 - st.left > st.width / 2 ? 'next' : 'prev' })
+  }
+  st = {}
+  return false
+}
+
+// 页面下发的动画指令
+function onCmd(cmd, oldCmd, owner) {
+  if (!cmd || !cmd.action) return
+  if (cmd.action === 'auto') {
+    // 点击翻页：从 0° 播放到 180°
+    setLeaf(owner, 0, cmd.dir)
+    owner.requestAnimationFrame(function () {
+      setLeaf(owner, 180, cmd.dir, 'transform 0.5s ease-in-out')
+    })
+  } else if (cmd.action === 'finish') {
+    setLeaf(owner, 180, cmd.dir, 'transform 0.3s ease-out')
+  } else if (cmd.action === 'cancel') {
+    setLeaf(owner, 0, cmd.dir, 'transform 0.25s ease-out')
+  } else if (cmd.action === 'reset') {
+    setLeaf(owner, 0, cmd.dir)
+  }
+}
+
+module.exports = {
+  start: start,
+  move: move,
+  end: end,
+  onCmd: onCmd
+}

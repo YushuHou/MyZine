@@ -14,6 +14,10 @@ module.exports = [].concat(
     require('./japanese'),
     require('./mono'),
     // 主题
-    require('./postcard')
+    require('./postcard'),
+    require('./nature'),
+    require('./food'),
+    require('./farm'),
+    require('./roadtrip')
   ]
 )

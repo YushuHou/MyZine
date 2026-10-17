@@ -183,7 +183,13 @@ const parts = {
   CI: p => [frame(`${p}1`, 200, 300, 680, 680, 'square', { shape: 'circle' })],
 
   // 拱形框
-  AR: p => [frame(`${p}1`, 240, 280, 600, 820, 'portrait', { shape: 'arch' })]
+  AR: p => [frame(`${p}1`, 240, 280, 600, 820, 'portrait', { shape: 'arch' })],
+
+  // 双餐盘：一大一小两个圆形框错落摆放（美食餐桌）
+  PL: p => [
+    frame(`${p}1`, 96, 150, 600, 600, 'square', { shape: 'circle' }),
+    frame(`${p}2`, 588, 800, 420, 420, 'square', { shape: 'circle' })
+  ]
 }
 
 /**

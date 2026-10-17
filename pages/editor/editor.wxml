@@ -1,5 +1,10 @@
 <!-- 编辑页：一屏一页 -->
 <view class="page">
+  <!-- 提示条：每次打开小程序后第一次进入编辑页时显示，5 秒后自动收起 -->
+  <view wx:if="{{saveNotice}}" class="save-notice" bindtap="onCloseNotice">
+    <text class="save-notice-text">相册只保存在本次使用中，关闭小程序后不会保留，记得及时导出 PDF 或保存图片。</text>
+    <text class="save-notice-close">×</text>
+  </view>
   <view class="stage" bindtouchstart="onTouchStart" catchtouchmove="onTouchMove" bindtouchend="onTouchEnd" bindtouchcancel="onTouchEnd">
     <canvas type="2d" id="pageCanvas" class="page-canvas" style="width: {{canvasW}}px; height: {{canvasH}}px;"></canvas>
   </view>

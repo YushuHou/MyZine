@@ -54,7 +54,8 @@ function colorOf(style, value) {
 /**
  * 按风格 doodles 配置摆放线稿：
  * doodles: { names: [...], perSpread: [2, 4], size: [70, 110]（基准 px）, colors: ['accent', ...],
- *            lineWidth: 3（基准 px）, rotate: 20（±度）, pageTypes: ['body'] }
+ *            lineWidth: 3（基准 px）, rotate: 20（±度）, pageTypes: ['body'],
+ *            avoid: [{ x, y, w, h }]（0–1 坐标，风格固定元素所在区域，如底部栅栏）}
  * 每个跨页按 id 稳定选取数量、位置、线稿；与照片框、文字槽重叠的位置不放
  * @param frames resolveFrames 之后的照片框（0–1 坐标）
  * @param avoid  其他要避开的区域（画布 px）[{ x, y, w, h }]
@@ -84,7 +85,9 @@ function drawPageDoodles(ctx, style, page, frames, W, H, unit, avoid = []) {
     const x = h.ox + (h.mirror ? 1080 - sx : sx) * unit
     candidates.push({ x, y: sy * unit, key: `${h.ox}:${i}` })
   }))
-  const blocked = frames.map(f => ({ x: f.x * W, y: f.y * H, w: f.w * W, h: f.h * H })).concat(avoid)
+  const blocked = frames.map(f => ({ x: f.x * W, y: f.y * H, w: f.w * W, h: f.h * H }))
+    .concat(avoid)
+    .concat((cfg.avoid || []).map(a => ({ x: a.x * W, y: a.y * H, w: a.w * W, h: a.h * H })))
   const free = candidates.filter(c => {
     const r = (maxS / 2 + 12) * unit
     return blocked.every(b => c.x + r < b.x || c.x - r > b.x + b.w || c.y + r < b.y || c.y - r > b.y + b.h)

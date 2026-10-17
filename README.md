@@ -1,12 +1,146 @@
 # MyZine
 
-把旅行照片做成照片书的微信小程序（原生小程序 + JavaScript，纯本地运行）。
+把旅行照片做成照片书的微信小程序。原生小程序 + JavaScript，WebView 渲染，画布用 `canvas type="2d"`；纯本地运行，不联网、不登录、不用云开发。
 
-> 完整的项目结构、如何新增风格 / 版式 / 线稿，将在阶段 7 补充。需求见 `docs/MyZine需求文档.md`，各阶段方案见 `docs/plans/`。
+需求见 `docs/MyZine需求文档.md`，各阶段方案、真机验证结论和离线预览图见 `docs/plans/`。
 
-## 提审前检查（必做）
+---
 
-开发用页面（素材方案验证页、线稿预览页）放在分包 `dev` 中，正式版不应包含：
+## 1. 项目结构
+
+```
+app.js / app.json / app.wxss       入口；app.globalData.album 是当前相册（只在内存中）
+pages/
+  index/        首页：书籍信息卡片、导入照片、拖动排序、开始制作 / 继续编辑 / 重新排版
+  info/         书籍信息：书名、作者、同游人、地点、起止日期、想说的话
+  templates/    模板选择：纯色（色块切换）/ 风格 / 主题三组，按主题筛选；用自己的照片渲染示例
+  editor/       编辑：一屏一页；点照片框选中 → 换照片 / 拖动缩放 / 填满完整切换
+  spreads/      跨页管理：缩略图列表、拖动排序、插入 / 换版式 / 换风格 / 删除，更换主模板
+  preview/      立体翻书预览（flip.wxs 处理拖动翻页）
+  export/       导出：PDF（分享版 / 打印版）、保存图片（单页 / 跨页）
+components/
+  photo-picker/ 照片选择面板（页码标签、全部 / 未使用、当前高亮）
+  layout-picker/版式选择面板（按张数分组、示意图）
+core/                               逻辑层（不依赖页面）
+  album.js      相册数据、页列表 getPageList（页名、页码、照片编号、装饰词）、反色跨页样式
+  photos.js     导入：chooseMedia → getImageInfo（EXIF 校正）→ 压缩图 + 缩略图 → 横 / 竖 / 方
+  book.js       生成整本书：封面 → 扉页 → 正文（autoLayout）→ 封底
+  autoLayout.js 自动排版：方向匹配 → 节奏（density）→ 加权轮换；风格偏好版式；反色跨页标记
+  spreads.js    跨页增删、排序、换版式
+  registry.js   版式 / 风格注册表、阅读顺序
+  styleAssets.js渲染前加载风格素材（代码纹理、字形字体、分包图片）
+  usage.js      照片用在哪些页（照片面板标签）
+  bookInfo.js   书籍信息字段、日期格式
+  devConfig.js  开发工具开关
+  render/       渲染（编辑、缩略图、预览、导出共用）
+    renderPage.js   统一渲染函数 renderPage(ctx, page, layout, style, size, images, options)
+    renderSpread.js 跨页图（左右页画到一张 3:2 画布）
+    spreadImages.js 跨页图片渲染器（离屏画布 → JPG，按内容缓存）
+    frames.js       照片框最终形态：倾斜、边框、形状、票根副券
+    decorations.js  背景、颗粒、页面装饰、照片框装饰分发
+    decoText.js     装饰文字：文字槽（大标题 / 副标题 / 问候语 / 路牌）、页眉、照片编号
+    glyphText.js    字形路径文字（西文）+ 系统字体（中文），同一行基线对齐
+    svgPath.js      SVG 路径解析（M/L/H/V/C/S/Q/T/A/Z）
+    doodles.js      线稿绘制与自动摆放
+    textures.js     代码生成的纹理：颗粒、纸张、牛皮纸、报纸
+    paperCraft.js   照片滤镜、票根、撕边垫纸、霓虹描边、半调网点
+    postcard.js     邮票、邮戳（沿圆弧写字）、航空信封斜条
+    themeDeco.js    餐盘沿、照片角线稿、格纹 / 栅栏页边、虚线路线
+    text.js / photoGeometry.js / exif.js / imageLoader.js / hitTest.js
+  export/       canvasFile.js（画布导出）、saveImage.js、exportBook.js、pdf.js（自写 PDF 生成器）
+  ui/           sortable.js + sortable.wxs（拖动排序）
+templates/                          模板数据（新增风格 / 版式 / 线稿只改这里）
+  layouts/      parts.js（单页组件）、body.js（正文版式）、cover / title / back.js
+  styles/       solids.js（纯色 8 种）+ 每个风格一个文件，index.js 汇总
+  doodles/      线稿路径数据
+  themes.js     12 个主题标签
+pkg-fonts/      分包：MZ Playfair / MZ Caveat / MZ Oswald 字形数据 + 字体授权页
+dev/            分包（开发用，提审前移除）：素材与滤镜验证页、线稿与字形预览页
+scripts/        build-glyphs.py（生成字形数据，不进小程序包）
+licenses/fonts/ OFL 授权全文（不进小程序包）
+docs/           需求文档、阶段方案（不进小程序包）
+```
+
+## 2. 渲染流程
+
+```
+getPageList(album)            每页：spreadId、side（left / right / full / single）、页名、页码、照片编号、装饰词
+   ↓
+loadRenderImages(loader, …)   照片（display / original / thumb）+ 代码纹理 + 字形字体
+   ↓
+renderPage / renderSpread     背景 → 色块 → 装饰 → 照片框（垫纸 → 底板 → 照片 → 滤镜 → 票根）
+                              → 胶带 / 邮票等 → 文字块 → 装饰文字 → 线稿 → 页码 → 颗粒
+   ↓
+编辑页画布 / 跨页缩略图 / 翻书预览 / 导出（离屏画布 → JPG → PDF 或相册）
+```
+
+所有尺寸以单页 1080 宽为基准 px，渲染时按画布宽度换算，同一套代码输出 1080 宽（分享版）和 2480 宽（打印版）。
+
+## 3. 如何新增风格
+
+1. 在 `templates/styles/` 新建 `xxx.js`，导出风格对象；在 `templates/styles/index.js` 中加上 `require('./xxx')`。不需要改其他代码。
+2. 常用字段（完整用法可参考现有风格文件）：
+
+| 字段 | 说明 |
+|---|---|
+| `id` / `name` / `group` | 唯一 id、显示名、分组 `solid` / `style` / `theme` |
+| `description` / `tags` | 模板页说明；适合主题（`templates/themes.js` 的 key） |
+| `colors` | 配色。必需：`background` `text` `textMuted` `accent` `endpaper` `placeholder` `fitFill`；可加自定义键，其他字段用键名引用 |
+| `fonts` | 封面 / 扉页文字块的角色字体：`title` `subtitle` `body` `caption`（系统字体） |
+| `background` | `{ type: 'color' }` / `{ type: 'texture', texture: 'paper' \| 'kraft' \| 'newsprint' }` |
+| `grain` / `pagePalette` | 颗粒感；底色在跨页间轮换（左右页可不同） |
+| `photoFrame` | `borderWidth` `borderColor` `bottomExtra`（拍立得）`shadow` `rotateJitter` `backing`（撕边垫纸）`ticketStub`（票根） |
+| `photoFilter` | `[{ type: 'grayscale' }, { type: 'tint', color, mode, alpha }, { type: 'lightLeak' }]` |
+| `frameDecorations` | `tape` `stamp` `postmark` `dateStamp` `outline` `plateRim` `cornerDoodle`；`largestOnly`、`layer: 'frame'` |
+| `decorations` | `rect` `line` `text` `perforation` `gutterLine` `halftone` `airmailBorder` `checkerBorder` `fenceBorder` `route`；`chance`、`mirror`、`pageTypes` |
+| `doodles` | 线稿摆放：`names` `perSpread` `size` `colors` `lineWidth` `rotate` `avoid` |
+| `wordPool` / `decoText` | 装饰词池；`headline` `kicker` `greeting` `runningHeader` `index` 的内容和字体（`glyph: 'playfair' \| 'caveat' \| 'oswald'` 用字形路径）；`plate` 底牌、`dy` 下移 |
+| `pageNumber` | `{ show, glyph, size, color, format: 'pad2' }` |
+| `layoutWeights` | 偏好版式：`{ 版式 id: 倍数 }`，≥ 2 时方框按完全匹配计分 |
+| `darkVariant` | 反色跨页的深色配置（约每 5 个正文跨页一次） |
+
+3. 变量：`{title} {location} {date} {year} {month} {word}`，任一为空整条不显示。西文用字形路径画（`uppercase` 只作用于西文），中文用系统字体；中西文混排的长标题请分行（见海边明信片的 `greeting.lines`）。
+
+## 4. 如何新增版式
+
+1. 单页组件写在 `templates/layouts/parts.js` 的 `parts` 中，按**左页**书写（外侧在左，坐标为基准 px），右页自动镜像：
+   ```js
+   XX: p => [frame(`${p}1`, 96, 400, 912, 608, 'landscape', { shape: 'arch' })]
+   // 带文字槽 / 色块时返回 { frames, slots: [slot('headline', x, y, w)], blocks: [block(x, y, w, h, color)] }
+   ```
+2. 在 `templates/layouts/body.js` 中组合：`pair('XX', 'L1', '名称', 自动排版权重, 'normal' | 'airy' | 'dense')`；跨中缝或跨页大图用 `spread(id, 名称, [跨页坐标的框…], 权重, density)`。
+3. 照片框方向（横 / 竖 / 方）要与实际宽高比一致（> 1.1 横、< 0.9 竖）；版心外侧 96、内侧 72、上 96、下 120，单页版式不贴中缝（满版出血除外）。
+4. 页内照片按「从上到下、从左到右」填充和编号，不用关心框的书写顺序。
+
+## 5. 如何新增线稿
+
+1. 在 `templates/doodles/index.js` 中加一条：`name: { name: '中文名', viewBox: [0, 0, 100, 100], mode: 'stroke' | 'fill', d: 'SVG 路径' }`。
+2. 打开开发工具「线稿与字形预览」页检查效果（描边宽度会随画布换算，大小两种尺寸都看一下）。
+3. 在风格的 `doodles.names` 或 `cornerDoodle.names` 中引用。
+
+## 6. 西文字体（字形路径）
+
+- iPhone 上 `wx.loadFontFace` 注册的字体不能用于 canvas 2d（真机验证，见 `docs/plans/阶段6.md`），所以西文装饰文字用**字形路径**绘制：`scripts/build-glyphs.py` 用 fonttools 把字形轮廓和字距导出为 SVG 路径数据（`pkg-fonts/*.js`，`require.async` 加载），`core/render/glyphText.js` 绘制。
+- 重新生成：`python scripts/build-glyphs.py <字体源目录>`（源字体从 Google Fonts 官方仓库下载：`Caveat[wght].ttf`、`PlayfairDisplay[wght].ttf`、`Oswald[wght].ttf`）。
+- 授权：来源字体均为 SIL Open Font License 1.1；依 OFL 保留名称条款，转换后的数据命名为 MZ Playfair / MZ Caveat / MZ Oswald。授权全文见 `licenses/fonts/`，小程序内「字体授权」页（`pkg-fonts/license/license`）同样可查看。
+
+## 7. 真机验证结论（摘要）
+
+| 项目 | 结论 | 记录 |
+|---|---|---|
+| 画布读取分包里的图片文件 | ❌ 不可用 | 阶段 5 |
+| 分包 JS 模块 `require.async` | ✅ | 阶段 6 |
+| Data URL 图片用于画布 | ✅（今后的图片素材用 base64 写进分包 JS） | 阶段 6 |
+| `loadFontFace` 字体用于 canvas 2d | ❌（iPhone），改用字形路径 | 阶段 6 |
+| `ctx.filter` | ❌ 没有该属性 | 阶段 7 |
+| `saturation` / `screen` / `multiply` 混合 | ✅ | 阶段 7 |
+| `shareFileMessage` 发送 18.6MB 打印版 PDF | ✅ | 阶段 4 |
+
+以上均在 iPhone 上验证；**安卓尚未测试**（打开预览后转发、字形文字、滤镜等）。
+
+## 8. 开发工具与提审前检查（必做）
+
+开发用页面（素材与滤镜验证页、线稿与字形预览页）放在分包 `dev` 中，正式版不应包含：
 
 1. 打开 `core/devConfig.js`，把 `DEV_TOOLS` 改为 `false`（首页不再显示开发工具入口）。
 2. 打开 `app.json`，从 `subpackages` 中删除 `root` 为 `"dev"` 的那一项：
@@ -19,13 +153,10 @@
    ```
 3. 在开发者工具中重新编译，确认首页底部没有「开发工具」字样，且「详情 → 基本信息」中的代码包大小里没有 `dev` 分包。
 
-即使忘记第 1、2 步，开发工具入口在正式版（`envVersion === 'release'`）中也不会显示；但分包仍会被打包上传，所以第 2 步不能省略。
+即使忘记第 1、2 步，开发工具入口在正式版（`envVersion === 'release'`）中也不会显示；但分包仍会被打包上传，所以第 2 步不能省略。`dev/check/ttf/` 中的 TTF base64 只供验证页对照使用，随开发分包一起移除。
 
-## 西文字体（字形路径）与授权
+## 9. 已知限制
 
-- iPhone 上 `wx.loadFontFace` 注册的字体不能用于 canvas 2d（真机验证，见 `docs/plans/阶段6.md`），所以西文装饰文字用**字形路径**绘制：
-  - `scripts/build-glyphs.py` 用 fonttools 把字体的字形轮廓和字距导出为 SVG 路径数据，生成 `pkg-fonts/{playfair,caveat,oswald}.js`（分包，`require.async` 加载）
-  - `core/render/glyphText.js` 用 `core/render/svgPath.js` 把字形画到画布上；中文及缺失字符用系统字体，同一行基线对齐
-  - 重新生成：`python scripts/build-glyphs.py <字体源目录>`（源字体从 Google Fonts 官方仓库下载：Caveat[wght].ttf、PlayfairDisplay[wght].ttf、Oswald[wght].ttf）
-- 来源字体 Playfair Display、Caveat、Oswald 均为 SIL Open Font License 1.1；依 OFL 保留名称条款，转换后的数据命名为 MZ Playfair / MZ Caveat / MZ Oswald。授权全文见 `licenses/fonts/`，小程序内「字体授权」页（`pkg-fonts/license/license`）同样可查看。
-- `dev/check/ttf/` 中的 TTF base64 只供验证页对照使用，随开发分包一起在提审前移除。
+- 相册只在内存中，关闭小程序后不会保留（编辑页首次进入时会提示，导出页常驻提示）。
+- 只支持 3:4 页面；不支持印刷出血（3mm）和 CMYK。
+- 满版出血照片冲印裁切时边缘可能有细白边。

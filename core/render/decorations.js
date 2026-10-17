@@ -4,6 +4,7 @@ const { hashRandom } = require('./frames')
 const { textureSize } = require('./textures')
 const { drawStamp, drawPostmark, drawAirmailBorder } = require('./postcard')
 const { drawOutline, drawHalftone } = require('./paperCraft')
+const { drawPlateRim, drawCornerDoodle, drawCheckerBorder, drawFenceBorder, drawRoute } = require('./themeDeco')
 
 // 风格颜色：可写 colors 中的键名，也可直接写颜色值
 function colorOf(style, value, fallback) {
@@ -112,6 +113,7 @@ function roundRect(ctx, x, y, w, h, r) {
  * - gutterLine 中缝细线：{ color, width（基准 px） }，画在靠中缝的页边（跨页大图画在中线）
  * - airmailBorder 航空信封红蓝斜条页边：{ colors, width, stripe }
  * - halftone 半调网点色块：{ x, y, w, h, color, dot, gap, fade }
+ * - checkerBorder 格纹桌布页边、fenceBorder 木栅栏页边、route 虚线路线（见 themeDeco.js）
  * 通用：chance（偶尔出现）、mirror（右页镜像）、pages、pageTypes
  */
 function drawDecorations(ctx, style, page, W, H, unit, images) {
@@ -125,6 +127,12 @@ function drawDecorations(ctx, style, page, W, H, unit, images) {
       drawAirmailBorder(ctx, style, d, page, W, H, unit)
     } else if (d.type === 'halftone') {
       drawHalftone(ctx, style, d, mirroredX(d, page) * W, d.y * H, d.w * W, d.h * H, unit)
+    } else if (d.type === 'checkerBorder') {
+      drawCheckerBorder(ctx, style, d, page, W, H, unit)
+    } else if (d.type === 'fenceBorder') {
+      drawFenceBorder(ctx, style, d, page, W, H, unit)
+    } else if (d.type === 'route') {
+      drawRoute(ctx, style, d, page, W, H, unit)
     } else if (d.type === 'line') {
       ctx.strokeStyle = colorOf(style, d.color, '#000')
       ctx.lineWidth = (d.lineWidth || 2) * unit
@@ -201,6 +209,7 @@ function drawPerforation(ctx, style, d, W, H, unit) {
  * - tape 和纸胶带：{ colors, width, height, angleJitter, placement: 'top' | 'corners' }
  * - stamp 邮票框 / postmark 邮戳圆环（明信片）：largestOnly 时只画在本页最大的照片框上；minWidth 小于它的框不画
  * - outline 霓虹描边：{ color, width, offset, glow }
+ * - plateRim 餐盘沿（圆形框）、cornerDoodle 照片角线稿（见 themeDeco.js）
  * 通用：layer: 'frame' 表示跟着这张照片一起画（会被后面叠上来的照片盖住）
  * - dateStamp 日期戳：画在照片区域内，见 drawDateStamp
  * @param frame  resolveFrames 之后的照片框
@@ -228,6 +237,8 @@ function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {})
       const anchor = stampRect || { x: ax, y: rect.y - R * 0.25, w: 0, h: R }
       drawPostmark(ctx, style, d, anchor, ctxInfo.info, unit, seed)
     } else if (d.type === 'outline') drawOutline(ctx, style, d, rect, unit)
+    else if (d.type === 'plateRim') drawPlateRim(ctx, style, d, frame, rect, unit)
+    else if (d.type === 'cornerDoodle') drawCornerDoodle(ctx, style, d, rect, unit, seed)
   })
 }
 

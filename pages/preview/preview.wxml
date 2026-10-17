@@ -1,15 +1,46 @@
-<!-- 双页预览 -->
+<!-- 立体翻书预览 -->
+<wxs src="./flip.wxs" module="flip" />
 <view class="page">
-  <swiper class="swiper" current="{{current}}" bindchange="onChange" style="height: {{imgH + 56}}px;">
-    <swiper-item wx:for="{{items}}" wx:key="id">
-      <view class="slide">
-        <view class="spread" style="width: {{imgW}}px; height: {{imgH}}px;">
-          <image wx:if="{{item.src}}" class="spread-img" src="{{item.src}}" />
-          <view wx:else class="loading">生成中…</view>
-        </view>
-        <view class="label">{{item.label}}</view>
+  <view
+    id="book"
+    class="book"
+    style="width: {{imgW}}px; height: {{imgH}}px;"
+    data-left="{{bookLeft}}"
+    data-width="{{imgW}}"
+    data-cannext="{{canNext}}"
+    data-canprev="{{canPrev}}"
+    bindtouchstart="{{flip.start}}"
+    bindtouchmove="{{flip.move}}"
+    bindtouchend="{{flip.end}}"
+    bindtouchcancel="{{flip.end}}"
+    change:cmd="{{flip.onCmd}}"
+    cmd="{{flipCmd}}"
+  >
+    <!-- 底层左右两页 -->
+    <view class="half left">
+      <image wx:if="{{baseLeft.src}}" class="half-img pos-{{baseLeft.pos}}" src="{{baseLeft.src}}" />
+    </view>
+    <view class="half right">
+      <image wx:if="{{baseRight.src}}" class="half-img pos-{{baseRight.pos}}" src="{{baseRight.src}}" />
+    </view>
+    <view wx:if="{{!baseLeft.src && !baseRight.src}}" class="loading">生成中…</view>
+
+    <!-- 翻动的书页（始终存在，静止时隐藏；角度由 flip.wxs 控制） -->
+    <view id="leaf" class="leaf dir-{{leaf.dir}} {{leaf.show ? '' : 'hidden'}}">
+      <view class="face front">
+        <image wx:if="{{leaf.front.src}}" class="half-img pos-{{leaf.front.pos}}" src="{{leaf.front.src}}" />
+        <view class="shade shade-{{leaf.dir}}-front"></view>
       </view>
-    </swiper-item>
-  </swiper>
-  <view class="counter">{{current + 1}} / {{items.length}} · 左右滑动翻页</view>
+      <view class="face back">
+        <image wx:if="{{leaf.back.src}}" class="half-img pos-{{leaf.back.pos}}" src="{{leaf.back.src}}" />
+        <view class="shade shade-{{leaf.dir}}-back"></view>
+      </view>
+    </view>
+
+    <!-- 书脊阴影 -->
+    <view class="spine"></view>
+  </view>
+
+  <view class="label">{{label}}</view>
+  <view class="counter">{{current + 1}} / {{total}} · 拖动或轻点两侧翻页</view>
 </view>

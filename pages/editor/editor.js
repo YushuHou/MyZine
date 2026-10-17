@@ -59,6 +59,8 @@ Page({
     hasPhoto: false,
     slotFit: 'fill',
     pickerShow: false,
+    // 「相册不会保存」提示条
+    saveNotice: false,
     pickerPhotos: [],
     pickerCurrentId: ''
   },
@@ -77,6 +79,13 @@ Page({
 
   onReady() {
     if (!this.pages) return
+    // 退出提示：每次打开小程序后，第一次进入编辑页时在顶部显示提示条（toast 最多两行，长句会被截断）
+    // 返回首页不会丢失相册，关闭小程序才会；5 秒后自动收起，点一下立即关闭
+    if (!app.globalData.saveNoticeShown) {
+      app.globalData.saveNoticeShown = true
+      this.setData({ saveNotice: true })
+      this.noticeTimer = setTimeout(() => this.setData({ saveNotice: false }), 5000)
+    }
     wx.createSelectorQuery()
       .select('#pageCanvas')
       .fields({ node: true, size: true, rect: true })
@@ -135,7 +144,13 @@ Page({
     this.updateCanvasSize(() => this.draw())
   },
 
+  onCloseNotice() {
+    clearTimeout(this.noticeTimer)
+    this.setData({ saveNotice: false })
+  },
+
   onUnload() {
+    clearTimeout(this.noticeTimer)
     if (this.loader) this.loader.clear()
   },
 

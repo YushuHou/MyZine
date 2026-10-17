@@ -73,6 +73,8 @@ function hitsFrames(rect, frames, W, H) {
  *   多行 { lines: [{ text, font, ifMissing: { var, text } }], lineGap（基准 px）, shadow }
  *     中西文混排的标题分行（如「Greetings from」+ 地点），某行变量为空则跳过；ifMissing 指定变量为空时改用的文字
  *   太宽时缩小字号（不小于 minScale，默认 0.5）；shadow：压在照片上时加柔和阴影
+ *   dy：整个文字槽下移（基准 px），如路牌下面的副标题要离路牌远一点
+ *   plate：文字下面的底牌（如公路旅行的路牌）{ color, radius, padX, padY（基准 px）, border: { color, width, inset } }
  * @returns 画出的文字区域（画布 px），供线稿避让
  */
 function drawSlots(ctx, style, page, layoutPage, W, H, unit) {
@@ -88,23 +90,70 @@ function drawSlots(ctx, style, page, layoutPage, W, H, unit) {
     }).filter(line => line.text)
     if (!lines.length) return
     const align = slot.align || 'left'
-    const x = align === 'center' ? (slot.x + slot.w / 2) * W : align === 'right' ? (slot.x + slot.w) * W : slot.x * W
     const maxW = slot.w * W
-    let y = slot.y * H
+    // 先排版（字号、宽度、基线），有底牌时据此画底牌，再画字
+    const plate = def.plate
+    const padX = plate ? (plate.padX || 36) * unit : 0
+    const padY = plate ? (plate.padY || 24) * unit : 0
+    let y = slot.y * H + (def.dy || 0) * unit
+    const laid = lines.map((line, i) => {
+      const spec = specOf(line.font, unit)
+      const w = measureGlyphText(ctx, spec, line.text)
+      if (w > maxW - padX * 2) spec.size *= Math.max(def.minScale || 0.5, (maxW - padX * 2) / w)
+      if (i > 0) y += def.lineGap ? def.lineGap * unit : spec.size * 1.15
+      return { line, spec, y, width: measureGlyphText(ctx, spec, line.text) }
+    })
+    const blockW = Math.max.apply(null, laid.map(l => l.width))
+    // 有底牌时文字在底牌里，底牌按对齐方式贴着文字槽的边
+    const boxLeft = align === 'center' ? (slot.x + slot.w / 2) * W - blockW / 2 - padX : align === 'right' ? (slot.x + slot.w) * W - blockW - padX * 2 : slot.x * W
+    const x = plate
+      ? (align === 'center' ? boxLeft + padX + blockW / 2 : align === 'right' ? boxLeft + padX + blockW : boxLeft + padX)
+      : (align === 'center' ? (slot.x + slot.w / 2) * W : align === 'right' ? (slot.x + slot.w) * W : slot.x * W)
+    if (plate) {
+      const top = laid[0].y - laid[0].spec.size * 0.82 - padY
+      const bottom = laid[laid.length - 1].y + laid[laid.length - 1].spec.size * 0.22 + padY
+      const r = (plate.radius || 16) * unit
+      ctx.save()
+      ctx.fillStyle = colorOf(style, plate.color)
+      ctx.beginPath()
+      ctx.moveTo(boxLeft + r, top)
+      ctx.arcTo(boxLeft + blockW + padX * 2, top, boxLeft + blockW + padX * 2, bottom, r)
+      ctx.arcTo(boxLeft + blockW + padX * 2, bottom, boxLeft, bottom, r)
+      ctx.arcTo(boxLeft, bottom, boxLeft, top, r)
+      ctx.arcTo(boxLeft, top, boxLeft + blockW + padX * 2, top, r)
+      ctx.closePath()
+      ctx.fill()
+      if (plate.border) {
+        const inset = (plate.border.inset || 8) * unit
+        ctx.strokeStyle = colorOf(style, plate.border.color, '#FFFFFF')
+        ctx.lineWidth = Math.max(1, (plate.border.width || 3) * unit)
+        const ir = Math.max(0, r - inset)
+        const x0 = boxLeft + inset
+        const x1 = boxLeft + blockW + padX * 2 - inset
+        const y0 = top + inset
+        const y1 = bottom - inset
+        ctx.beginPath()
+        ctx.moveTo(x0 + ir, y0)
+        ctx.arcTo(x1, y0, x1, y1, ir)
+        ctx.arcTo(x1, y1, x0, y1, ir)
+        ctx.arcTo(x0, y1, x0, y0, ir)
+        ctx.arcTo(x0, y0, x1, y0, ir)
+        ctx.closePath()
+        ctx.stroke()
+      }
+      ctx.restore()
+      drawn.push({ x: boxLeft, y: top, w: blockW + padX * 2, h: bottom - top })
+    }
     ctx.save()
     if (def.shadow) {
       ctx.shadowColor = 'rgba(0, 0, 0, 0.35)'
       ctx.shadowBlur = 12 * unit
       ctx.shadowOffsetY = 2 * unit
     }
-    lines.forEach((line, i) => {
-      const spec = specOf(line.font, unit)
-      const w = measureGlyphText(ctx, spec, line.text)
-      if (w > maxW) spec.size *= Math.max(def.minScale || 0.5, maxW / w)
-      if (i > 0) y += def.lineGap ? def.lineGap * unit : spec.size * 1.15
-      const width = drawGlyphText(ctx, spec, line.text, x, y, align, colorOf(style, line.font.color))
+    laid.forEach(l => {
+      const width = drawGlyphText(ctx, l.spec, l.line.text, x, l.y, align, colorOf(style, l.line.font.color))
       const left = align === 'center' ? x - width / 2 : align === 'right' ? x - width : x
-      drawn.push({ x: left, y: y - spec.size, w: width, h: spec.size * 1.3 })
+      drawn.push({ x: left, y: l.y - l.spec.size, w: width, h: l.spec.size * 1.3 })
     })
     ctx.restore()
   })
