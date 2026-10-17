@@ -1,4 +1,5 @@
-<!-- 首页：导入照片 -->
+<!-- 首页：书籍信息 + 导入照片 -->
+<wxs src="../../core/ui/sortable.wxs" module="sortable" />
 <view class="page">
   <view class="header">
     <view class="title">MyZine</view>
@@ -20,25 +21,39 @@
   </view>
 
   <block wx:else>
-    <view class="count">已选 {{photos.length}} 张，按选择顺序排版</view>
-    <view class="grid">
-      <view class="cell" wx:for="{{photos}}" wx:key="id">
+    <view class="count">已选 {{photos.length}} 张 · 长按拖动调整顺序</view>
+    <view class="grid" style="height: {{gridHeight}}px;">
+      <view
+        wx:for="{{photos}}"
+        wx:key="id"
+        class="cell {{dragIndex === index ? 'dragging' : ''}}"
+        style="left: {{item.x}}px; top: {{item.y}}px; width: {{cellSize}}px; height: {{cellSize}}px;"
+        data-index="{{index}}"
+        bindlongpress="{{sortable.longpress}}"
+        bindtouchmove="{{sortable.touchmove}}"
+        bindtouchend="{{sortable.touchend}}"
+        bindtouchcancel="{{sortable.touchend}}"
+      >
         <image class="thumb" src="{{item.src}}" mode="aspectFill" lazy-load />
         <view class="no">{{index + 1}}</view>
         <view class="badge">{{item.label}}</view>
         <view class="remove" data-id="{{item.id}}" catchtap="onRemove">×</view>
       </view>
-      <view class="cell add-cell" bindtap="onAddPhotos">
-        <view class="add-inner">
-          <view class="add-plus">+</view>
-          <view class="add-text">继续添加</view>
-        </view>
+      <view class="cell add-cell" style="left: {{addX}}px; top: {{addY}}px; width: {{cellSize}}px; height: {{cellSize}}px;" bindtap="onAddPhotos">
+        <view class="add-plus">+</view>
+        <view class="add-text">继续添加</view>
       </view>
     </view>
   </block>
 
   <view class="footer">
-    <button wx:if="{{photos.length}}" class="btn-secondary footer-btn" bindtap="onAddPhotos">继续添加照片</button>
-    <button class="btn-primary footer-btn" disabled="{{!photos.length}}" bindtap="onStart">开始制作</button>
+    <block wx:if="{{hasBook}}">
+      <button class="btn-secondary footer-btn" disabled="{{!photos.length}}" bindtap="onRelayout">重新排版</button>
+      <button class="btn-primary footer-btn" bindtap="onContinue">继续编辑</button>
+    </block>
+    <block wx:else>
+      <button wx:if="{{photos.length}}" class="btn-secondary footer-btn" bindtap="onAddPhotos">继续添加照片</button>
+      <button class="btn-primary footer-btn" disabled="{{!photos.length}}" bindtap="onStart">开始制作</button>
+    </block>
   </view>
 </view>

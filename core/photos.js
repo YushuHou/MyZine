@@ -48,14 +48,34 @@ async function makeDisplayImage(src, info) {
   }
 }
 
+// 生成网格用的小缩略图（长边约 360），失败时退回用压缩图
+async function makeThumb(display) {
+  const info = display.info
+  const longSide = Math.max(info.width, info.height)
+  if (longSide <= C.THUMB_MAX_SIDE) return display.path
+  try {
+    const res = await call(wx.compressImage, {
+      src: display.path,
+      quality: 70,
+      compressedWidth: Math.round(info.rawWidth * C.THUMB_MAX_SIDE / longSide)
+    })
+    return res.tempFilePath
+  } catch (err) {
+    console.warn('生成缩略图失败', display.path, err)
+    return display.path
+  }
+}
+
 async function importOne(src) {
   const info = await readImage(src)
   const display = await makeDisplayImage(src, info)
+  const thumbPath = await makeThumb(display)
   const ratio = info.width / info.height
   return {
     id: `p_${Date.now()}_${idSeed++}`,
     displayPath: display.path,     // 编辑、预览、分享版导出使用
     originalPath: src,             // 打印版导出使用
+    thumbPath,                     // 首页网格、照片面板使用
     width: info.width,             // 已按 EXIF 校正的宽高
     height: info.height,
     ratio: Math.round(ratio * 1000) / 1000,

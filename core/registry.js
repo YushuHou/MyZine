@@ -27,6 +27,11 @@ function listStyles() {
   return styles.slice()
 }
 
+// 某一页的版式数据：右页取 pages[1]，左页、单页、跨页大图取 pages[0]
+function getLayoutPage(layout, side) {
+  return side === 'right' ? layout.pages[1] : layout.pages[0]
+}
+
 // 版式中全部照片框，按左页 → 右页、页内书写顺序排列
 function getLayoutFrames(layout) {
   return layout.pages.reduce((all, page) => all.concat(page.frames), [])
@@ -37,6 +42,7 @@ module.exports = {
   getStyle,
   listLayouts,
   listStyles,
+  getLayoutPage,
   getLayoutFrames,
   DEFAULT_STYLE_ID: styles[0].id
 }

@@ -1,0 +1,39 @@
+// 拖动排序的触摸处理（WXS 在视图层运行：拖动跟手，并能在拖动时阻止页面滚动）
+// 用法：每项绑定 data-index，以及
+//   bindlongpress="{{sortable.longpress}}" bindtouchmove="{{sortable.touchmove}}"
+//   bindtouchend="{{sortable.touchend}}" bindtouchcancel="{{sortable.touchend}}"
+// 页面实现 onSortStart({ index, x, y })、onSortMove({ x, y })、onSortEnd()，x/y 为 clientX/clientY
+
+function longpress(e, owner) {
+  var st = owner.getState()
+  var t = e.touches[0] || e.changedTouches[0]
+  st.dragging = true
+  st.startX = t.clientX
+  st.startY = t.clientY
+  owner.callMethod('onSortStart', { index: e.instance.getDataset().index, x: t.clientX, y: t.clientY })
+}
+
+function touchmove(e, owner) {
+  var st = owner.getState()
+  if (!st.dragging) return true
+  var t = e.touches[0]
+  e.instance.setStyle({ transform: 'translate(' + (t.clientX - st.startX) + 'px, ' + (t.clientY - st.startY) + 'px)' })
+  owner.callMethod('onSortMove', { x: t.clientX, y: t.clientY })
+  // 返回 false：阻止冒泡和默认行为（页面滚动）
+  return false
+}
+
+function touchend(e, owner) {
+  var st = owner.getState()
+  if (!st.dragging) return true
+  st.dragging = false
+  e.instance.setStyle({ transform: '' })
+  owner.callMethod('onSortEnd', {})
+  return false
+}
+
+module.exports = {
+  longpress: longpress,
+  touchmove: touchmove,
+  touchend: touchend
+}

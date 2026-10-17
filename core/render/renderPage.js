@@ -3,6 +3,10 @@ const C = require('../constants')
 const { computePlacement } = require('./photoGeometry')
 const { isRotated90, applyExifTransform } = require('./exif')
 const { drawTextBlock } = require('./text')
+const { getLayoutPage } = require('../registry')
+
+// 编辑时选中照片框的高亮色（界面元素，不属于风格）
+const SELECTION_COLOR = '#2F80ED'
 
 /**
  * 把一页画到 canvas 上。所有尺寸按画布宽度等比换算，同一函数可输出 1080 宽和 2480 宽
@@ -12,14 +16,14 @@ const { drawTextBlock } = require('./text')
  * @param style   风格
  * @param size    画布尺寸 { width, height }：单页 3:4，跨页大图（side = full）3:2
  * @param images  imageLoader.loadPhotos() 的结果 { photoId: { image, exif, transform } }
- * @param options { guides: 是否画安全边距和中缝参考线（仅编辑时） }
+ * @param options { guides: 是否画安全边距和中缝参考线；selectedFrameId: 高亮的照片框。都只在编辑时使用 }
  */
 function renderPage(ctx, page, layout, style, size, images, options = {}) {
   const W = size.width
   const H = size.height
   // 基准 px → 画布 px 的换算系数（按单页宽度计算）
   const unit = (page.side === 'full' ? W / 2 : W) / C.PAGE_WIDTH
-  const layoutPage = page.side === 'right' ? layout.pages[1] : layout.pages[0]
+  const layoutPage = getLayoutPage(layout, page.side)
 
   ctx.save()
   ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -38,6 +42,10 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
     drawTextBlock(ctx, block, page.info, style, W, H, unit)
   })
   if (options.guides) drawGuides(ctx, page.side, W, H, unit)
+  if (options.selectedFrameId) {
+    const frame = layoutPage.frames.find(f => f.id === options.selectedFrameId)
+    if (frame) drawSelection(ctx, frame, W, H, unit)
+  }
   ctx.restore()
 }
 
@@ -138,6 +146,25 @@ function drawPhoto(ctx, entry, slot, x, y, w, h) {
   const rw = swap ? p.dh : p.dw
   const rh = swap ? p.dw : p.dh
   ctx.drawImage(img, -rw / 2, -rh / 2, rw, rh)
+  ctx.restore()
+}
+
+// 选中高亮：框外侧描边
+function drawSelection(ctx, frame, W, H, unit) {
+  const x = frame.x * W
+  const y = frame.y * H
+  const w = frame.w * W
+  const h = frame.h * H
+  const lw = Math.max(2, 6 * unit)
+  ctx.save()
+  if (frame.rotate) {
+    ctx.translate(x + w / 2, y + h / 2)
+    ctx.rotate(frame.rotate * Math.PI / 180)
+    ctx.translate(-(x + w / 2), -(y + h / 2))
+  }
+  ctx.strokeStyle = SELECTION_COLOR
+  ctx.lineWidth = lw
+  ctx.strokeRect(x - lw / 2, y - lw / 2, w + lw, h + lw)
   ctx.restore()
 }
 

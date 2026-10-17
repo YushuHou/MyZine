@@ -31,11 +31,23 @@ function createSpread(pageType, layoutId, slots) {
   return { id: newId('s'), pageType, layoutId, styleId: null, slots: slots || {} }
 }
 
+// 照片框换照片：偏移、缩放、模式重置为默认
+function setSlotPhoto(spread, frameId, photoId) {
+  spread.slots[frameId] = createSlot(photoId)
+}
+
 function addPhotos(album, photos) {
   album.photos = album.photos.concat(photos)
 }
 
-// 删除照片，同时清空引用它的照片框
+// 按新顺序（照片 id 数组）重排照片
+function reorderPhotos(album, ids) {
+  const map = {}
+  album.photos.forEach(p => { map[p.id] = p })
+  album.photos = ids.map(id => map[id]).filter(Boolean)
+}
+
+// 删除照片，同时清空引用它的照片框（变为空框）
 function removePhoto(album, photoId) {
   album.photos = album.photos.filter(p => p.id !== photoId)
   album.spreads.forEach(spread => {
@@ -108,7 +120,9 @@ module.exports = {
   createAlbum,
   createSlot,
   createSpread,
+  setSlotPhoto,
   addPhotos,
+  reorderPhotos,
   removePhoto,
   getPhoto,
   getSpread,

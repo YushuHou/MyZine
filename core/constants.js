@@ -16,6 +16,8 @@ module.exports = {
 
   // 编辑/预览用压缩图的长边上限
   DISPLAY_MAX_SIDE: 2048,
+  // 网格缩略图的长边
+  THUMB_MAX_SIDE: 360,
   // 单次最多选择照片数
   CHOOSE_MAX_COUNT: 20,
   // 导出 JPG 质量

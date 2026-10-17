@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "编辑",
-  "usingComponents": {}
+  "disableScroll": true,
+  "usingComponents": {
+    "photo-picker": "/components/photo-picker/photo-picker"
+  }
 }

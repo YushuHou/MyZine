@@ -1,0 +1,23 @@
+<!-- 照片选择面板 -->
+<view wx:if="{{show}}" class="picker">
+  <view class="mask" bindtap="onClose" catchtouchmove="noop"></view>
+  <view class="sheet">
+    <view class="header" catchtouchmove="noop">
+      <view class="tabs">
+        <view class="tab {{filter === 'all' ? 'active' : ''}}" data-filter="all" bindtap="onFilter">全部 {{photos.length}}</view>
+        <view class="tab {{filter === 'unused' ? 'active' : ''}}" data-filter="unused" bindtap="onFilter">未使用 {{unusedCount}}</view>
+      </view>
+      <view class="close" bindtap="onClose">×</view>
+    </view>
+
+    <scroll-view class="body" scroll-y>
+      <view wx:if="{{!list.length}}" class="empty">{{filter === 'unused' ? '所有照片都已使用' : '还没有照片，请回首页添加'}}</view>
+      <view class="grid">
+        <view wx:for="{{list}}" wx:key="id" class="cell {{item.id === currentId ? 'current' : ''}}" data-id="{{item.id}}" bindtap="onSelect">
+          <image class="thumb" src="{{item.thumb}}" mode="aspectFill" lazy-load />
+          <view wx:if="{{item.tags}}" class="tags">{{item.tags}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>
