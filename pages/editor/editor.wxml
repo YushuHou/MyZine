@@ -17,7 +17,7 @@
       <view class="tool" bindtap="onEditInfo">书籍信息</view>
       <view class="tool" bindtap="onManageSpreads">管理跨页</view>
       <view class="tool" bindtap="onPreview">预览</view>
-      <view class="tool tool-primary {{saving ? 'disabled' : ''}}" bindtap="onSave">保存本页</view>
+      <view class="tool tool-primary" bindtap="onExport">导出</view>
     </view>
 
     <!-- 选中照片框 -->

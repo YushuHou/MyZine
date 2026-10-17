@@ -7,7 +7,6 @@ const { createImageLoader } = require('../../core/render/imageLoader')
 const { frameAtPoint } = require('../../core/render/hitTest')
 const { fillOverflow } = require('../../core/render/photoGeometry')
 const { getPhotoUsage, formatUsage } = require('../../core/usage')
-const { renderPageToFile, saveToPhotosAlbum, removeExportFile } = require('../../core/export/saveImage')
 
 // 底部工具栏预留高度（px）
 const TOOLBAR_HEIGHT = 170
@@ -51,7 +50,6 @@ Page({
     total: 0,
     label: '',
     guides: false,
-    saving: false,
     // normal 普通 | selected 选中照片框 | adjust 调整照片位置和缩放
     mode: 'normal',
     hasPhoto: false,
@@ -94,15 +92,17 @@ Page({
       })
   },
 
-  // 从其他页面返回时：重新生成页列表（跨页可能已增删、排序），尽量停留在原来的页，
-  // 跨页管理里点了某个跨页则跳到它；然后重绘，书籍信息的修改也会立即显示
+  // 从其他页面返回时：重新生成页列表（跨页可能已增删、排序），尽量停留在原来的页；
+  // 跨页管理、导出页要求跳转时（pendingJump = { spreadId, side? }）跳到指定的页；
+  // 然后重绘，书籍信息的修改也会立即显示
   onShow() {
     if (!this.pages) return
     const prev = this.pages[this.data.current]
     this.pages = getPageList(this.album)
     let index = -1
-    if (this.pendingJump) {
-      index = this.pages.findIndex(p => p.spreadId === this.pendingJump)
+    const jump = this.pendingJump
+    if (jump) {
+      index = this.pages.findIndex(p => p.spreadId === jump.spreadId && (!jump.side || p.side === jump.side))
     } else if (prev) {
       index = this.pages.findIndex(p => p.spreadId === prev.spreadId && p.side === prev.side)
     }
@@ -358,7 +358,18 @@ Page({
     wx.navigateTo({
       url: '/pages/spreads/spreads',
       events: {
-        jump: ({ spreadId }) => { this.pendingJump = spreadId }
+        jump: target => { this.pendingJump = target }
+      }
+    })
+  },
+
+  onExport() {
+    const page = this.pages[this.data.current]
+    wx.navigateTo({
+      url: `/pages/export/export?spreadId=${page.spreadId}&side=${page.side}`,
+      events: {
+        // 有空照片框时选「返回填充」，跳到第一个有空框的页
+        jump: target => { this.pendingJump = target }
       }
     })
   },
@@ -370,25 +381,5 @@ Page({
 
   onEditInfo() {
     wx.navigateTo({ url: '/pages/info/info' })
-  },
-
-  async onSave() {
-    if (this.data.saving) return
-    this.setData({ saving: true })
-    wx.showLoading({ title: '正在生成图片', mask: true })
-    let filePath = ''
-    try {
-      filePath = await renderPageToFile(this.album, this.pages[this.data.current])
-      wx.hideLoading()
-      const result = await saveToPhotosAlbum(filePath)
-      if (result === 'saved') wx.showToast({ title: '已保存到相册', icon: 'success' })
-    } catch (err) {
-      console.error('保存失败', err)
-      wx.hideLoading()
-      wx.showToast({ title: '保存失败', icon: 'none' })
-    } finally {
-      removeExportFile(filePath)
-      this.setData({ saving: false })
-    }
   }
 })

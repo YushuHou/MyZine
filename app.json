@@ -4,7 +4,8 @@
     "pages/editor/editor",
     "pages/info/info",
     "pages/spreads/spreads",
-    "pages/preview/preview"
+    "pages/preview/preview",
+    "pages/export/export"
   ],
   "window": {
     "navigationBarTextStyle": "black",

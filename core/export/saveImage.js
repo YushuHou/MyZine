@@ -1,33 +1,75 @@
-// 单页导出为图片并保存到相册。使用离屏 canvas，阶段4 的打印版大尺寸导出沿用同一流程
+// 页面 / 跨页渲染为 JPG 文件，保存到相册。全部使用离屏 canvas，PDF 打印版的大尺寸也走这里
 const C = require('../constants')
 const { call, isCancel, isAuthDenied, privacyErrorText } = require('../wxp')
-const { getLayout } = require('../registry')
-const { getSpread, getSpreadPhotos, getSpreadStyle } = require('../album')
+const { getLayout, getLayoutPage } = require('../registry')
+const { getSpread, getSpreadPhotos, getSpreadStyle, getPhoto } = require('../album')
 const { renderPage } = require('../render/renderPage')
+const { renderSpread } = require('../render/renderSpread')
 const { createImageLoader } = require('../render/imageLoader')
+
+// 单页高度
+function pageHeightOf(pageWidth) {
+  return Math.round(pageWidth * C.PAGE_HEIGHT / C.PAGE_WIDTH)
+}
+
+// 某一页用到的照片（只加载这一页的，打印版内存更可控）
+function getPagePhotos(album, spread, side) {
+  const frames = getLayoutPage(getLayout(spread.layoutId), side).frames
+  const ids = {}
+  frames.forEach(f => { if (spread.slots[f.id]) ids[spread.slots[f.id].photoId] = true })
+  return Object.keys(ids).map(id => getPhoto(album, id)).filter(Boolean)
+}
 
 /**
  * 把一页渲染成 JPG 文件
  * @param options.width   单页宽度，默认 1080（打印版传 2480）
  * @param options.variant 'display' 压缩图 | 'original' 原图
  * @param options.quality JPG 质量
+ * @param options.half    跨页大图（side = full）只输出一半：'left' | 'right'，用于 PDF 拆页
  * @returns 文件路径；用完后调用 removeExportFile 清理
  */
 async function renderPageToFile(album, page, options = {}) {
   const pageWidth = options.width || C.PAGE_WIDTH
-  const width = page.side === 'full' ? pageWidth * 2 : pageWidth
-  const height = Math.round(pageWidth * C.PAGE_HEIGHT / C.PAGE_WIDTH)
+  const height = pageHeightOf(pageWidth)
+  const isFull = page.side === 'full'
+  const half = isFull ? options.half : null
+  const width = isFull && !half ? pageWidth * 2 : pageWidth
   const spread = getSpread(album, page.spreadId)
 
   const canvas = wx.createOffscreenCanvas({ type: '2d', width, height })
   const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('canvas unavailable')
   const loader = createImageLoader(canvas)
   try {
-    const images = await loader.loadPhotos(getSpreadPhotos(album, spread), options.variant || 'display')
-    renderPage(ctx, page, getLayout(spread.layoutId), getSpreadStyle(album, spread), { width, height }, images)
+    const images = await loader.loadPhotos(getPagePhotos(album, spread, page.side), options.variant || 'display')
+    // 拆半：按整张跨页尺寸绘制，平移后只留需要的一半
+    if (half === 'right') ctx.translate(-pageWidth, 0)
+    const size = isFull ? { width: pageWidth * 2, height } : { width, height }
+    renderPage(ctx, page, getLayout(spread.layoutId), getSpreadStyle(album, spread), size, images)
     return await exportCanvas(canvas, width, height, options.quality || C.EXPORT_JPG_QUALITY)
   } finally {
     // 生成完立即释放图片，避免大尺寸时内存不足
+    loader.clear()
+  }
+}
+
+/**
+ * 把一个跨页渲染成一张 3:2 横图（2160×1440），不画中缝阴影
+ */
+async function renderSpreadToFile(album, spread, options = {}) {
+  const pageWidth = options.width || C.PAGE_WIDTH
+  const width = pageWidth * 2
+  const height = pageHeightOf(pageWidth)
+  const canvas = wx.createOffscreenCanvas({ type: '2d', width, height })
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('canvas unavailable')
+  const loader = createImageLoader(canvas)
+  try {
+    const images = await loader.loadPhotos(getSpreadPhotos(album, spread), options.variant || 'display')
+    const style = getSpreadStyle(album, spread)
+    renderSpread(ctx, album, spread, { width, height }, images, { blankColor: style.colors.background })
+    return await exportCanvas(canvas, width, height, options.quality || C.EXPORT_JPG_QUALITY)
+  } finally {
     loader.clear()
   }
 }
@@ -56,6 +98,16 @@ async function exportCanvas(canvas, width, height, quality) {
   const path = `${wx.env.USER_DATA_PATH}/myzine_export_${Date.now()}.jpg`
   wx.getFileSystemManager().writeFileSync(path, base64, 'base64')
   return path
+}
+
+// 删除导出过程中生成的临时 JPG（明确是我们自己生成的文件才调用；系统临时文件删不掉时忽略）
+function removeTempFile(path) {
+  if (!path) return
+  try {
+    wx.getFileSystemManager().unlinkSync(path)
+  } catch (err) {
+    // 系统临时文件可能不允许删除，由微信自动回收
+  }
 }
 
 // 清理我们写入用户目录的导出文件（系统临时文件由微信自动管理）
@@ -115,4 +167,11 @@ async function saveToPhotosAlbum(filePath) {
   }
 }
 
-module.exports = { renderPageToFile, exportCanvas, saveToPhotosAlbum, removeExportFile }
+module.exports = {
+  renderPageToFile,
+  renderSpreadToFile,
+  exportCanvas,
+  saveToPhotosAlbum,
+  removeExportFile,
+  removeTempFile
+}

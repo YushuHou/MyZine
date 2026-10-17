@@ -62,7 +62,10 @@ function createImageLoader(canvas) {
     // 缩略图由压缩图生成，沿用压缩图的 EXIF 方向；90° 类方向仍会按宽高比自动检测
     const exif = (variant === 'original' ? photo.exif : photo.displayExif) || 'up'
     const image = await loadImage(path)
-    if (!image) return null
+    if (!image) {
+      // 原图读取失败（临时文件可能已被系统回收）时退回压缩图
+      return variant === 'original' ? loadPhoto(photo, 'display') : null
+    }
     return { image, exif, transform: needsTransform(image, exif, photo.ratio) }
   }
 
