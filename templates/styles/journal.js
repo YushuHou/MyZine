@@ -2,6 +2,7 @@
 module.exports = {
   id: 'journal',
   name: '手账',
+  group: 'style',
   description: '米色纸张、拍立得白边、和纸胶带，轻松随手',
   tags: ['food', 'family', 'pets', 'zoo-farm', 'amusement', 'party'],
   assetsPackage: null,

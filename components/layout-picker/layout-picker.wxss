@@ -108,3 +108,15 @@
   text-align: center;
   color: #2B2B2B;
 }
+
+/* 照片形状 */
+.frame.circle,
+.frame.ellipse {
+  border-radius: 50%;
+}
+.frame.arch {
+  border-radius: 999rpx 999rpx 0 0;
+}
+.frame.rounded {
+  border-radius: 8%;
+}

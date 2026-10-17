@@ -2,6 +2,7 @@
 module.exports = {
   id: 'film',
   name: '胶片',
+  group: 'style',
   description: '深色底片、齿孔、橙色日期戳和颗粒感',
   tags: ['city-night', 'road-trip', 'architecture', 'couple', 'party'],
   assetsPackage: null,

@@ -96,6 +96,10 @@ Page({
     wx.navigateTo({ url: '/dev/check/check' })
   },
 
+  onDevDoodles() {
+    wx.navigateTo({ url: '/dev/doodles/doodles' })
+  },
+
   onChangeTemplate() {
     wx.navigateTo({ url: '/pages/templates/templates?mode=change' })
   },

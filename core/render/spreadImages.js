@@ -1,6 +1,5 @@
 // 跨页图片渲染器：用一个离屏 canvas 逐个把跨页渲染成 JPG 文件，按内容缓存
 // 跨页管理的缩略图、双页预览共用
-const { getLayout } = require('../registry')
 const { getSpreadPhotos, getSpreadPages } = require('../album')
 const { renderSpread } = require('./renderSpread')
 const { createImageLoader } = require('./imageLoader')
@@ -9,15 +8,15 @@ const { loadRenderImages } = require('../styleAssets')
 
 // 跨页内容的缓存 key：版式、风格、照片框；有文字的版式还要算上书籍信息
 function contentKey(album, spread) {
-  const layout = getLayout(spread.layoutId)
-  const hasText = layout.pages.some(p => p.texts && p.texts.length)
   return JSON.stringify([
     spread.layoutId,
     spread.styleId || album.defaultStyleId,
     spread.pageType,
     spread.slots,
-    hasText ? album.info : null,
-    getSpreadPages(album, spread.id).map(p => p.pageNumbers)
+    !!spread.inverted,
+    // 装饰文字会用到书籍信息
+    album.info,
+    getSpreadPages(album, spread.id).map(p => [p.pageNumbers, p.frameNumbers, p.word])
   ])
 }
 

@@ -4,8 +4,11 @@ const { computePlacement } = require('./photoGeometry')
 const { isRotated90, applyExifTransform } = require('./exif')
 const { drawTextBlock } = require('./text')
 const { getLayoutPage } = require('../registry')
-const { resolveFrames, photoRect } = require('./frames')
-const { drawBackground, drawGrain, drawDecorations, drawFrameDecorations, drawDateStamp } = require('./decorations')
+const { resolveFrames, photoRect, borderOf, outerRect, cornerRadius, shapePath } = require('./frames')
+const { drawBackground, pageColorOf, drawBlocks, drawGrain, drawDecorations, drawFrameDecorations, drawDateStamp } = require('./decorations')
+const { drawSlots, drawRunningHeader, drawPhotoIndex } = require('./decoText')
+const { drawPageDoodles } = require('./doodles')
+const { drawGlyphText, measureGlyphText } = require('./glyphText')
 
 // 编辑时选中照片框的高亮色（界面元素，不属于风格）
 const SELECTION_COLOR = '#2F80ED'
@@ -39,12 +42,14 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   ctx.rect(0, 0, W, H)
   ctx.clip()
   ctx.clearRect(0, 0, W, H)
-  drawBackground(ctx, style, W, H, unit, images)
+  // 背景：页面底色（版式 background / 风格 pagePalette）+ 纹理
+  drawBackground(ctx, style, W, H, unit, images, pageColorOf(style, page, layoutPage))
   // 版式指定的整页底色（如环衬），取风格中的同名颜色
   if (layoutPage.fill) {
     ctx.fillStyle = style.colors[layoutPage.fill] || layoutPage.fill
     ctx.fillRect(0, 0, W, H)
   }
+  drawBlocks(ctx, style, layoutPage, W, H)
   drawDecorations(ctx, style, page, W, H, unit, images)
   frames.forEach(frame => drawFrame(ctx, frame, page.slots[frame.id], style, images, W, H, unit, page))
   // 胶带等照片框装饰在所有照片之后画，可以压住相邻照片
@@ -56,6 +61,12 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   ;(layoutPage.texts || []).forEach(block => {
     drawTextBlock(ctx, block, page.info, style, W, H, unit)
   })
+  // 装饰文字：版式文字槽（大标题、副标题）、页眉、照片编号
+  const textAreas = drawSlots(ctx, style, page, layoutPage, W, H, unit)
+    .concat(drawRunningHeader(ctx, style, page, frames, W, H, unit))
+  drawPhotoIndex(ctx, style, page, frames, W, H, unit)
+  // 线稿放在装饰位，避开照片和文字
+  drawPageDoodles(ctx, style, page, frames, W, H, unit, textAreas)
   drawPageNumbers(ctx, page, layoutPage, style, W, H, unit)
   // 颗粒覆盖整页（含照片），最后画；参考线和选中框不受影响
   drawGrain(ctx, style, W, H, unit, images)
@@ -68,13 +79,14 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   ctx.restore()
 }
 
-// 在照片框的坐标系（含旋转）中执行绘制，fn 收到照片框外框 { x, y, w, h }（画布 px）
+// 在照片框的坐标系（含旋转）中执行绘制，fn 收到照片框外形区域 { x, y, w, h }（画布 px，圆形为内切正圆）
 function withFrameTransform(ctx, frame, W, H, fn) {
-  const rect = { x: frame.x * W, y: frame.y * H, w: frame.w * W, h: frame.h * H }
+  const rect = outerRect(frame, W, H)
   ctx.save()
   if (frame.rotate) {
-    const cx = rect.x + rect.w / 2
-    const cy = rect.y + rect.h / 2
+    // 旋转中心始终是照片框中心
+    const cx = frame.x * W + frame.w * W / 2
+    const cy = frame.y * H + frame.h * H / 2
     ctx.translate(cx, cy)
     ctx.rotate(frame.rotate * Math.PI / 180)
     ctx.translate(-cx, -cy)
@@ -84,37 +96,38 @@ function withFrameTransform(ctx, frame, W, H, fn) {
 }
 
 /**
- * 一个照片框：底板（边框色 + 阴影）→ 照片区域（裁切）→ 照片 → 日期戳
+ * 一个照片框：底板（边框色 + 阴影）→ 照片区域（按形状裁切）→ 照片 → 日期戳
  * 风格 photoFrame：{ borderWidth, borderColor, bottomExtra（拍立得底边加宽）, radius, shadow }，尺寸为基准 px
- * @param frame resolveFrames 之后的照片框
+ * 照片框自带 mat（叠压版式）时用它的白边和阴影
+ * @param frame resolveFrames 之后的照片框（含 shape）
  */
 function drawFrame(ctx, frame, slot, style, images, W, H, unit, page) {
-  const pf = style.photoFrame || {}
-  const radius = (pf.radius != null ? pf.radius : (frame.radius || 0)) * unit
+  const border = borderOf(frame, style)
   const entry = slot && images[slot.photoId]
   const inner = photoRect(frame, style, W, H, unit)
-  const hasBorder = frame.framed && pf.borderWidth > 0
-  const hasShadow = pf.shadow && !frame.bleed
+  const hasBorder = border.width > 0
+  const shadow = border.shadow
 
   withFrameTransform(ctx, frame, W, H, rect => {
+    const radius = cornerRadius(frame, style, rect.w, rect.h, unit)
     // 底板：有边框时是边框色；只有阴影时是留白色
-    if (hasBorder || hasShadow) {
+    if (hasBorder || shadow) {
       ctx.save()
-      if (hasShadow) {
-        ctx.shadowColor = pf.shadow.color
-        ctx.shadowBlur = pf.shadow.blur * unit
-        ctx.shadowOffsetX = (pf.shadow.offsetX || 0) * unit
-        ctx.shadowOffsetY = (pf.shadow.offsetY || 0) * unit
+      if (shadow) {
+        ctx.shadowColor = shadow.color
+        ctx.shadowBlur = shadow.blur * unit
+        ctx.shadowOffsetX = (shadow.offsetX || 0) * unit
+        ctx.shadowOffsetY = (shadow.offsetY || 0) * unit
       }
-      ctx.fillStyle = hasBorder ? pf.borderColor : style.colors.fitFill
-      roundRectPath(ctx, rect.x, rect.y, rect.w, rect.h, radius)
+      ctx.fillStyle = hasBorder ? border.color : style.colors.fitFill
+      shapePath(ctx, frame.shape, rect.x, rect.y, rect.w, rect.h, radius)
       ctx.fill()
       ctx.restore()
     }
 
-    // 照片：裁切在照片区域内
+    // 照片：按形状裁切在照片区域内
     ctx.save()
-    roundRectPath(ctx, inner.x, inner.y, inner.w, inner.h, hasBorder ? Math.max(0, radius - pf.borderWidth * unit) : radius)
+    shapePath(ctx, frame.shape, inner.x, inner.y, inner.w, inner.h, hasBorder ? Math.max(0, radius - border.width * unit) : radius)
     ctx.clip()
     ctx.fillStyle = entry && slot.fit === 'fit' ? style.colors.fitFill : style.colors.placeholder
     ctx.fillRect(inner.x, inner.y, inner.w, inner.h)
@@ -150,7 +163,8 @@ function drawPhoto(ctx, entry, slot, x, y, w, h) {
 
 /**
  * 页码：正文页外侧下角（左页在左下、右页在右下；跨页大图两个都画）
- * 由风格的 pageNumber 控制：{ show, family, size, color, bottom（页码中线离页面下边的距离）}，尺寸均为基准 px
+ * 由风格的 pageNumber 控制：{ show, family, glyph（字形字体）, size, color, bottom（页码中线离页面下边的距离）,
+ *   format: 'pad2'（两位数 07）}，尺寸均为基准 px
  * 页码位置被照片盖住时（如满版照片）不画
  */
 function drawPageNumbers(ctx, page, layoutPage, style, W, H, unit) {
@@ -166,31 +180,30 @@ function drawPageNumbers(ctx, page, layoutPage, style, W, H, unit) {
     ? [{ n: numbers[0], x: margin, align: 'left' }, { n: numbers[1], x: W - margin, align: 'right' }]
     : [{ n: numbers[0], x: page.side === 'left' ? margin : pageW - margin, align: page.side === 'left' ? 'left' : 'right' }]
 
-  ctx.save()
-  ctx.font = `${cfg.weight || 'normal'} ${size}px ${cfg.family || 'sans-serif'}`
-  ctx.fillStyle = style.colors[cfg.color] || cfg.color || style.colors.textMuted || style.colors.text
-  ctx.textBaseline = 'middle'
+  const spec = { glyph: cfg.glyph, family: cfg.family || 'sans-serif', weight: cfg.weight, size, letterSpacing: (cfg.letterSpacing || 0) * unit }
+  const color = style.colors[cfg.color] || cfg.color || style.colors.textMuted || style.colors.text
+  // y 为页码中线，换算成基线
+  const baseline = y + size * 0.35
   spots.forEach(spot => {
-    const text = String(spot.n)
-    const tw = ctx.measureText(text).width
+    const text = cfg.format === 'pad2' && spot.n < 10 ? `0${spot.n}` : String(spot.n)
+    const tw = measureGlyphText(ctx, spec, text)
     const left = spot.align === 'left' ? spot.x : spot.x - tw
     // 被照片框盖住就跳过
     const covered = layoutPage.frames.some(f =>
       left < (f.x + f.w) * W && left + tw > f.x * W && y + size / 2 > f.y * H && y - size / 2 < (f.y + f.h) * H)
     if (covered) return
-    ctx.textAlign = spot.align
-    ctx.fillText(text, spot.x, y)
+    drawGlyphText(ctx, spec, text, spot.x, baseline, spot.align, color)
   })
-  ctx.restore()
 }
 
-// 选中高亮：框外侧描边（跟随照片框的倾斜）
+// 选中高亮：沿照片框外形描边（跟随倾斜和形状）
 function drawSelection(ctx, frame, W, H, unit) {
   const lw = Math.max(2, 6 * unit)
   withFrameTransform(ctx, frame, W, H, rect => {
     ctx.strokeStyle = SELECTION_COLOR
     ctx.lineWidth = lw
-    ctx.strokeRect(rect.x - lw / 2, rect.y - lw / 2, rect.w + lw, rect.h + lw)
+    shapePath(ctx, frame.shape, rect.x - lw / 2, rect.y - lw / 2, rect.w + lw, rect.h + lw, frame.shape === 'rounded' ? Math.min(rect.w, rect.h) * 0.08 + lw / 2 : 0)
+    ctx.stroke()
   })
 }
 
@@ -229,21 +242,6 @@ function drawSpineGuide(ctx, W, H, unit) {
   ctx.lineTo(W / 2, H)
   ctx.stroke()
   ctx.restore()
-}
-
-function roundRectPath(ctx, x, y, w, h, r) {
-  const rr = Math.min(r, w / 2, h / 2)
-  ctx.beginPath()
-  if (rr <= 0) {
-    ctx.rect(x, y, w, h)
-    return
-  }
-  ctx.moveTo(x + rr, y)
-  ctx.arcTo(x + w, y, x + w, y + h, rr)
-  ctx.arcTo(x + w, y + h, x, y + h, rr)
-  ctx.arcTo(x, y + h, x, y, rr)
-  ctx.arcTo(x, y, x + w, y, rr)
-  ctx.closePath()
 }
 
 module.exports = { renderPage }

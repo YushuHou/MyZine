@@ -8,7 +8,8 @@ function pct(v) {
 
 // 版式 → 示意图数据：单页版式两页并排，跨页大图一整张
 function toPreview(layout) {
-  const frames = page => page.frames.map(f => ({ id: f.id, left: pct(f.x), top: pct(f.y), width: pct(f.w), height: pct(f.h) }))
+  // 形状：圆形 / 椭圆整圆角，拱形只圆上边
+  const frames = page => page.frames.map(f => ({ id: f.id, left: pct(f.x), top: pct(f.y), width: pct(f.w), height: pct(f.h), shape: f.shape || 'rect' }))
   return {
     id: layout.id,
     name: layout.name,

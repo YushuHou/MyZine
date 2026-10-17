@@ -22,21 +22,44 @@ function drawTiled(ctx, image, W, H, tile) {
  *   { type: 'color', color }
  *   { type: 'texture', texture: 'paper', tile（基准 px）, color（底色） }
  *   { type: 'image', src, repeat: 'tile' | 'cover', tile, color }
+ * @param colorOverride 页面底色（版式指定或风格 pagePalette 选出）；有纹理时纹理以「正片叠底」叠在底色上
  */
-function drawBackground(ctx, style, W, H, unit, images) {
+function drawBackground(ctx, style, W, H, unit, images, colorOverride) {
   const bg = style.background || {}
-  ctx.fillStyle = bg.color || style.colors.background
+  ctx.fillStyle = colorOf(style, colorOverride, null) || bg.color || style.colors.background
   ctx.fillRect(0, 0, W, H)
   if (bg.type !== 'image' && bg.type !== 'texture') return
   const entry = images[bg.type === 'texture' ? `asset:texture:${bg.texture}` : `asset:${bg.src}`]
   if (!entry) return
   const img = entry.image
+  ctx.save()
+  if (colorOverride) ctx.globalCompositeOperation = 'multiply'
   if (bg.repeat === 'cover') {
     const k = Math.max(W / img.width, H / img.height)
     ctx.drawImage(img, (W - img.width * k) / 2, (H - img.height * k) / 2, img.width * k, img.height * k)
   } else {
     drawTiled(ctx, img, W, H, (bg.tile || (bg.type === 'texture' ? textureSize(bg.texture) : 540)) * unit)
   }
+  ctx.restore()
+}
+
+/**
+ * 页面底色（不只是整页单色）：版式 background 优先，其次风格 pagePalette（跨页间变化，左右页可不同）
+ * @returns 颜色（colors 键名或颜色值），没有时返回 null
+ */
+function pageColorOf(style, page, layoutPage) {
+  if (layoutPage.background) return layoutPage.background
+  const palette = style.pagePalette
+  if (!palette || !palette.length) return null
+  return palette[Math.floor(hashRandom(`palette:${page.spreadId || ''}:${page.side}`) * palette.length)]
+}
+
+// 版式色块：layoutPage.blocks = [{ x, y, w, h, color }]（0–1 坐标），画在背景之上、照片之下
+function drawBlocks(ctx, style, layoutPage, W, H) {
+  ;(layoutPage.blocks || []).forEach(b => {
+    ctx.fillStyle = colorOf(style, b.color, '#FFFFFF')
+    ctx.fillRect(b.x * W, b.y * H, b.w * W, b.h * H)
+  })
 }
 
 /**
@@ -77,6 +100,7 @@ function roundRect(ctx, x, y, w, h, r) {
  * - image：{ src, x, y, w, h }
  * - text：{ text, x, y, size, family, weight, color, align, letterSpacing, mirror（右页左右镜像） }
  * - perforation 胶片齿孔：{ edge: 'top' | 'bottom' | 'both', holeW, holeH, gap, offset（离页边）, radius, color }
+ * - gutterLine 中缝细线：{ color, width（基准 px） }，画在靠中缝的页边（跨页大图画在中线）
  */
 function drawDecorations(ctx, style, page, W, H, unit, images) {
   ;(style.decorations || []).forEach(d => {
@@ -99,6 +123,16 @@ function drawDecorations(ctx, style, page, W, H, unit, images) {
       drawDecorationText(ctx, style, d, page, W, H, unit)
     } else if (d.type === 'perforation') {
       drawPerforation(ctx, style, d, W, H, unit)
+    } else if (d.type === 'gutterLine') {
+      const x = page.side === 'left' ? W : page.side === 'right' ? 0 : page.side === 'full' ? W / 2 : -1
+      if (x >= 0) {
+        ctx.strokeStyle = colorOf(style, d.color, style.colors.accent)
+        ctx.lineWidth = Math.max(1, (d.width || 2) * unit)
+        ctx.beginPath()
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x, H)
+        ctx.stroke()
+      }
     }
     ctx.restore()
   })
@@ -155,7 +189,8 @@ function drawPerforation(ctx, style, d, W, H, unit) {
  * @param seed   随机种子
  */
 function drawFrameDecorations(ctx, style, frame, rect, unit, seed) {
-  if (frame.bleed) return
+  // 满版、不加边框的框（如四格条）不贴胶带等装饰
+  if (!frame.framed) return
   ;(style.frameDecorations || []).forEach(d => {
     if (d.type === 'tape') drawTapes(ctx, d, rect, unit, seed)
   })
@@ -235,4 +270,4 @@ function drawDateStamp(ctx, style, rect, info, unit) {
   ctx.restore()
 }
 
-module.exports = { colorOf, drawBackground, drawGrain, drawDecorations, drawFrameDecorations, drawDateStamp }
+module.exports = { colorOf, drawBackground, pageColorOf, drawBlocks, drawGrain, drawDecorations, drawFrameDecorations, drawDateStamp }

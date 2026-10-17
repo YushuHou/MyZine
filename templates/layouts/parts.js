@@ -11,9 +11,9 @@ function round4(v) {
   return Math.round(v * 10000) / 10000
 }
 
-// 一个照片框（px → 比例）
-function frame(id, x, y, w, h, orientation) {
-  return {
+// 一个照片框（px → 比例）；extra：shape（rect / rounded / circle / ellipse / arch）、mat（自带白边阴影）等
+function frame(id, x, y, w, h, orientation, extra) {
+  return Object.assign({
     id,
     x: round4(x / PAGE_W),
     y: round4(y / PAGE_H),
@@ -23,12 +23,35 @@ function frame(id, x, y, w, h, orientation) {
     radius: 0,
     rotate: 0,
     border: true
+  }, extra)
+}
+
+// 文字槽（px → 比例）：type 为 headline / kicker 等，y 为基线
+function slot(type, x, y, w, align) {
+  return { type, x: round4(x / PAGE_W), y: round4(y / PAGE_H), w: round4(w / PAGE_W), align: align || 'left' }
+}
+
+// 色块（px → 比例）；color 为风格 colors 的键名或颜色值
+function block(x, y, w, h, color) {
+  return { x: round4(x / PAGE_W), y: round4(y / PAGE_H), w: round4(w / PAGE_W), h: round4(h / PAGE_H), color }
+}
+
+// 左右镜像：左页组件 → 右页（照片框、文字槽、色块都镜像，文字左右对齐互换）
+function mirror(frames) {
+  return frames.map(f => Object.assign({}, f, { x: round4(1 - f.x - f.w) }))
+}
+function mirrorPage(page) {
+  const swap = { left: 'right', right: 'left', center: 'center' }
+  return {
+    frames: mirror(page.frames),
+    slots: (page.slots || []).map(sl => Object.assign({}, sl, { x: round4(1 - sl.x - sl.w), align: swap[sl.align] || sl.align })),
+    blocks: (page.blocks || []).map(b => Object.assign({}, b, { x: round4(1 - b.x - b.w) }))
   }
 }
 
-// 左右镜像：左页组件 → 右页
-function mirror(frames) {
-  return frames.map(f => Object.assign({}, f, { x: round4(1 - f.x - f.w) }))
+// 组件可以返回照片框数组，或 { frames, slots, blocks }
+function normalize(part) {
+  return Array.isArray(part) ? { frames: part, slots: [], blocks: [] } : Object.assign({ slots: [], blocks: [] }, part)
 }
 
 // 各组件：p 为照片框 id 前缀（左页 'L'、右页 'R'），返回左页坐标的照片框
@@ -105,58 +128,115 @@ const parts = {
     frame(`${p}2`, 572, 107, 436, 581, 'portrait'),
     frame(`${p}3`, 96, 728, 436, 581, 'portrait'),
     frame(`${p}4`, 572, 728, 436, 581, 'portrait')
-  ]
+  ],
+
+  // ---- 阶段 6 新组件 ----
+  // 满版出血：铺满整页（含靠中缝一侧）
+  FB: p => [frame(`${p}1`, 0, 0, 1080, 1440, 'portrait')],
+
+  // 小横图 + 大留白 + 标题槽：标题在上方留白，照片贴外侧下沿
+  H1L: p => ({
+    frames: [frame(`${p}1`, 96, 947, 560, 373, 'landscape')],
+    slots: [slot('headline', 96, 430, 880), slot('kicker', 96, 500, 880)]
+  }),
+
+  // 小竖图 + 大留白 + 标题槽：照片在内侧上方，标题在下方留白
+  H1P: p => ({
+    frames: [frame(`${p}1`, 588, 160, 420, 560, 'portrait')],
+    slots: [slot('headline', 96, 1060, 880), slot('kicker', 96, 1130, 880)]
+  }),
+
+  // 密集网格 2×3（各 436×370）
+  G6: p => [0, 1, 2].reduce((all, row) => all.concat([
+    frame(`${p}${row * 2 + 1}`, 96, 113 + row * 410, 436, 370, 'landscape'),
+    frame(`${p}${row * 2 + 2}`, 572, 113 + row * 410, 436, 370, 'landscape')
+  ]), []),
+
+  // 密集：上一张大横图 + 下 2×2（共 5 张）
+  G5: p => [
+    frame(`${p}1`, 96, 96, 912, 512, 'landscape'),
+    frame(`${p}2`, 96, 648, 436, 306, 'landscape'),
+    frame(`${p}3`, 572, 648, 436, 306, 'landscape'),
+    frame(`${p}4`, 96, 994, 436, 306, 'landscape'),
+    frame(`${p}5`, 572, 994, 436, 306, 'landscape')
+  ],
+
+  // 大头贴四格条：白色纸条上竖排 4 张小方图，贴外侧
+  ST: p => ({
+    frames: [0, 1, 2, 3].map(i => frame(`${p}${i + 1}`, 116, 170 + i * 280, 260, 260, 'square', { border: false })),
+    blocks: [block(96, 150, 300, 1140, '#FFFFFF')]
+  }),
+
+  // 叠压：大横图在后，带白边阴影的竖图叠在右下
+  OV: p => [
+    frame(`${p}1`, 96, 200, 760, 507, 'landscape'),
+    frame(`${p}2`, 600, 560, 400, 533, 'portrait', { mat: { border: 14, color: '#FFFFFF', shadow: true } })
+  ],
+
+  // 圆形框
+  CI: p => [frame(`${p}1`, 200, 300, 680, 680, 'square', { shape: 'circle' })],
+
+  // 拱形框
+  AR: p => [frame(`${p}1`, 240, 280, 600, 820, 'portrait', { shape: 'arch' })]
 }
 
 /**
  * 用两个组件组成一个左右成对的正文跨页版式
  * @param autoWeight 自动排版时的出现权重：1 普通，越小越少出现，0 不参与自动排版
  */
-function pair(left, right, name, autoWeight = 1) {
-  const leftFrames = parts[left]('L')
-  const rightFrames = mirror(parts[right]('R'))
+/**
+ * 用两个组件组成一个左右成对的正文跨页版式
+ * @param autoWeight 自动排版时的出现权重：1 普通，越小越少出现，0 不参与自动排版
+ * @param density    dense 密集 / normal 普通 / airy 留白，用于版式节奏
+ */
+function pair(left, right, name, autoWeight = 1, density = 'normal') {
+  const l = normalize(parts[left]('L'))
+  const r = mirrorPage(normalize(parts[right]('R')))
   return {
     id: `b-${left}-${right}`,
     name,
     pageType: 'body',
     span: 'pair',
-    capacity: leftFrames.length + rightFrames.length,
+    capacity: l.frames.length + r.frames.length,
     autoWeight,
+    density,
     pages: [
-      { frames: leftFrames, texts: [] },
-      { frames: rightFrames, texts: [] }
+      { frames: l.frames, slots: l.slots, blocks: l.blocks, texts: [] },
+      { frames: r.frames, slots: r.slots, blocks: r.blocks, texts: [] }
     ]
   }
 }
 
 /**
- * 跨页大图版式：照片框坐标相对跨页 2160×1440（px）
+ * 跨页版式：照片框坐标相对跨页 2160×1440（px），可以多个框（如跨中缝 + 小图）
+ * @param frames [{ x, y, w, h, orientation, shape }]
  */
-function spread(id, name, x, y, w, h, autoWeight) {
+function spread(id, name, frames, autoWeight, density = 'normal') {
   return {
     id,
     name,
     pageType: 'body',
     span: 'spread',
-    capacity: 1,
+    capacity: frames.length,
     autoWeight,
+    density,
     pages: [
       {
-        frames: [{
-          id: 'S1',
-          x: round4(x / (PAGE_W * 2)),
-          y: round4(y / PAGE_H),
-          w: round4(w / (PAGE_W * 2)),
-          h: round4(h / PAGE_H),
-          orientation: 'landscape',
+        frames: frames.map((f, i) => Object.assign({
+          id: `S${i + 1}`,
+          x: round4(f.x / (PAGE_W * 2)),
+          y: round4(f.y / PAGE_H),
+          w: round4(f.w / (PAGE_W * 2)),
+          h: round4(f.h / PAGE_H),
+          orientation: f.orientation || 'landscape',
           radius: 0,
           rotate: 0,
           border: true
-        }],
+        }, f.shape ? { shape: f.shape } : {})),
         texts: []
       }
     ]
   }
 }
 
-module.exports = { parts, frame, mirror, pair, spread, PAGE_W, PAGE_H }
+module.exports = { parts, frame, slot, block, mirror, pair, spread, PAGE_W, PAGE_H }

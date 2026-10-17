@@ -134,7 +134,7 @@ Page({
     else wx.navigateBack()
   },
 
-  // 第一次开始制作：跳过时使用默认的极简
+  // 第一次开始制作：跳过时使用默认的纸白
   onSkip() {
     this.startBook()
   },

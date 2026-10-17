@@ -4,7 +4,7 @@
 // 3. 字体在 canvas 2d（页面画布 + 离屏画布）中是否生效：比较同一串文字的宽度，并测试多种 font 写法
 // 4. 页面普通文字（webview）是否生效：肉眼看，用来区分「字体数据有问题」还是「画布不认」
 // 5. 画布能否加载 Data URL 图片
-const { FONTS, loadFont } = require('../../core/fonts')
+const { FONTS, loadFont } = require('./fontFace')
 const testImage = require('./testImage.js')
 
 const SAMPLE = 'Hamburgefonstiv 0123'

@@ -29,6 +29,6 @@
   </view>
 
   <view wx:if="{{mode === 'first'}}" class="footer">
-    <button class="btn-secondary" bindtap="onSkip">跳过，使用极简</button>
+    <button class="btn-secondary" bindtap="onSkip">跳过，使用纸白</button>
   </view>
 </view>

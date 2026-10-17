@@ -18,6 +18,10 @@
       {
         "type": "file",
         "value": "README.md"
+      },
+      {
+        "type": "folder",
+        "value": "scripts"
       }
     ],
     "include": []

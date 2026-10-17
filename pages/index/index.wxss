@@ -169,6 +169,11 @@
   text-decoration: underline;
 }
 
+.dev-sep {
+  margin: 0 12rpx;
+  text-decoration: none;
+}
+
 /* 底部按钮 */
 .footer {
   position: fixed;

@@ -15,12 +15,12 @@
             <view class="spread">
               <block wx:if="{{item.spread}}">
                 <view class="page full">
-                  <view wx:for="{{item.pages[0].frames}}" wx:for-item="f" wx:key="id" class="frame" style="left: {{f.left}}%; top: {{f.top}}%; width: {{f.width}}%; height: {{f.height}}%;"></view>
+                  <view wx:for="{{item.pages[0].frames}}" wx:for-item="f" wx:key="id" class="frame {{f.shape}}" style="left: {{f.left}}%; top: {{f.top}}%; width: {{f.width}}%; height: {{f.height}}%;"></view>
                 </view>
               </block>
               <block wx:else>
                 <view wx:for="{{item.pages}}" wx:for-item="p" wx:for-index="pi" wx:key="pi" class="page">
-                  <view wx:for="{{p.frames}}" wx:for-item="f" wx:key="id" class="frame" style="left: {{f.left}}%; top: {{f.top}}%; width: {{f.width}}%; height: {{f.height}}%;"></view>
+                  <view wx:for="{{p.frames}}" wx:for-item="f" wx:key="id" class="frame {{f.shape}}" style="left: {{f.left}}%; top: {{f.top}}%; width: {{f.width}}%; height: {{f.height}}%;"></view>
                 </view>
               </block>
             </view>

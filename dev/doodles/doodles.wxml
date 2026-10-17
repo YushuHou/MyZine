@@ -1,0 +1,5 @@
+<!-- 开发用：线稿与字形预览 -->
+<view class="page">
+  <view class="tip">每格：深色大号 + 橙色小号；底部为字形路径文字，蓝线为基线（中西文应对齐）</view>
+  <canvas type="2d" id="doodleCanvas" style="width: {{canvasW}}px; height: {{canvasH}}px;"></canvas>
+</view>

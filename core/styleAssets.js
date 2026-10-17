@@ -2,6 +2,7 @@
 // 渲染前统一调用 loadRenderImages，得到照片 + 素材的图片表，交给 renderPage
 const { getSpreadStyle } = require('./album')
 const { getTexturePath } = require('./render/textures')
+const { loadGlyphFont } = require('./render/glyphText')
 
 // 分包名 → 加载结果（Promise<boolean>）
 const packages = {}
@@ -47,6 +48,16 @@ function texturesOf(style) {
   return textures
 }
 
+// 风格用到的字形字体（装饰文字、页码）
+function glyphFontsOf(style) {
+  const keys = {}
+  const add = font => { if (font && font.glyph) keys[font.glyph] = true }
+  const dt = style.decoText || {}
+  Object.keys(dt).forEach(k => add(dt[k].font))
+  add(style.pageNumber)
+  return Object.keys(keys)
+}
+
 /**
  * 加载渲染一个跨页（或其中一页）需要的全部图片
  * @param loader  imageLoader（绑定在目标 canvas 上）
@@ -66,7 +77,9 @@ async function loadRenderImages(loader, album, spread, photos, variant, options)
   }))
   const [images, assetImages] = await Promise.all([
     loader.loadPhotos(photos, variant, options),
-    loader.loadAssets(assets)
+    loader.loadAssets(assets),
+    // 字形字体加载完才能画装饰文字（失败时退回系统字体，不阻塞）
+    Promise.all(glyphFontsOf(style).map(loadGlyphFont))
   ])
   return Object.assign(images, assetImages)
 }

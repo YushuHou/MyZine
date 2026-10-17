@@ -1,14 +1,11 @@
-// 西文字体：base64 写在分包 pkg-fonts 的 JS 模块中，require.async 加载后用 wx.loadFontFace 注册
-// 原因：loadFontFace 的 source 只能是 https 或 Data URL（基础库 3.7.9+），小程序不联网，只能用 Data URL；
-//       画布和文件接口都读不到分包里的文件，但分包里的 JS 模块可以 require.async 加载
-// 中文仍用系统字体
-// 注册名不含空格（如 MZPlayfair）：真机验证中带引号 / 空格的字体名在画布中未生效，正在排查
+// 验证页专用：用 wx.loadFontFace（Data URL）注册 TTF 字体，检测画布是否支持
+// 6a-0 结论：iPhone 上这种字体不能用于 canvas 2d，正式功能改用字形路径（core/render/glyphText.js）
+// 保留此页作为对照：微信更新后可重新检测
 
-// require.async 的路径必须是字面量，便于构建时分析依赖
 const FONTS = {
-  playfair: { family: 'MZPlayfair', name: 'Playfair Display', load: () => require.async('../pkg-fonts/playfair.js') },
-  caveat: { family: 'MZCaveat', name: 'Caveat', load: () => require.async('../pkg-fonts/caveat.js') },
-  oswald: { family: 'MZOswald', name: 'Oswald', load: () => require.async('../pkg-fonts/oswald.js') }
+  playfair: { family: 'MZPlayfair', name: 'Playfair Display', load: () => Promise.resolve(require('./ttf/playfair.js')) },
+  caveat: { family: 'MZCaveat', name: 'Caveat', load: () => Promise.resolve(require('./ttf/caveat.js')) },
+  oswald: { family: 'MZOswald', name: 'Oswald', load: () => Promise.resolve(require('./ttf/oswald.js')) }
 }
 
 // key → Promise<{ ok, family, step, error, bytes }>

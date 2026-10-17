@@ -13,9 +13,12 @@ function getLayout(id) {
   return layout
 }
 
+// 改名的风格：旧 id → 新 id（原「极简」并入纸白）
+const STYLE_ALIASES = { minimal: 'paper' }
+
 // 找不到时退回第一个风格，避免旧数据引用已删除的风格时崩溃
 function getStyle(id) {
-  return styleMap[id] || styles[0]
+  return styleMap[id] || styleMap[STYLE_ALIASES[id]] || styles[0]
 }
 
 // 列出某种页面类型（cover / title / body / back）的版式；不传则返回全部
