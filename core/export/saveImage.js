@@ -1,11 +1,13 @@
 // 页面 / 跨页渲染为 JPG 文件，保存到相册。全部使用离屏 canvas，PDF 打印版的大尺寸也走这里
 const C = require('../constants')
 const { call, isCancel, isAuthDenied, privacyErrorText } = require('../wxp')
+const { exportCanvas, removeTempFile, removeExportFile } = require('./canvasFile')
 const { getLayout, getLayoutPage } = require('../registry')
 const { getSpread, getSpreadPhotos, getSpreadStyle, getPhoto } = require('../album')
 const { renderPage } = require('../render/renderPage')
 const { renderSpread } = require('../render/renderSpread')
 const { createImageLoader } = require('../render/imageLoader')
+const { loadRenderImages } = require('../styleAssets')
 
 // 单页高度
 function pageHeightOf(pageWidth) {
@@ -41,7 +43,7 @@ async function renderPageToFile(album, page, options = {}) {
   if (!ctx) throw new Error('canvas unavailable')
   const loader = createImageLoader(canvas)
   try {
-    const images = await loader.loadPhotos(getPagePhotos(album, spread, page.side), options.variant || 'display')
+    const images = await loadRenderImages(loader, album, spread, getPagePhotos(album, spread, page.side), options.variant || 'display')
     // 拆半：按整张跨页尺寸绘制，平移后只留需要的一半
     if (half === 'right') ctx.translate(-pageWidth, 0)
     const size = isFull ? { width: pageWidth * 2, height } : { width, height }
@@ -65,58 +67,12 @@ async function renderSpreadToFile(album, spread, options = {}) {
   if (!ctx) throw new Error('canvas unavailable')
   const loader = createImageLoader(canvas)
   try {
-    const images = await loader.loadPhotos(getSpreadPhotos(album, spread), options.variant || 'display')
+    const images = await loadRenderImages(loader, album, spread, getSpreadPhotos(album, spread), options.variant || 'display')
     const style = getSpreadStyle(album, spread)
     renderSpread(ctx, album, spread, { width, height }, images, { blankColor: style.colors.background })
     return await exportCanvas(canvas, width, height, options.quality || C.EXPORT_JPG_QUALITY)
   } finally {
     loader.clear()
-  }
-}
-
-// 离屏 canvas 导出为 JPG：优先 canvasToTempFilePath，不支持时改用 toDataURL 写文件
-async function exportCanvas(canvas, width, height, quality) {
-  try {
-    const res = await call(wx.canvasToTempFilePath, {
-      canvas,
-      x: 0,
-      y: 0,
-      width,
-      height,
-      // 明确指定输出尺寸，否则默认会乘以设备像素比
-      destWidth: width,
-      destHeight: height,
-      fileType: 'jpg',
-      quality
-    })
-    return res.tempFilePath
-  } catch (err) {
-    console.warn('canvasToTempFilePath 导出离屏 canvas 失败，改用 toDataURL', err)
-  }
-  const dataUrl = canvas.toDataURL('image/jpeg', quality)
-  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
-  const path = `${wx.env.USER_DATA_PATH}/myzine_export_${Date.now()}.jpg`
-  wx.getFileSystemManager().writeFileSync(path, base64, 'base64')
-  return path
-}
-
-// 删除导出过程中生成的临时 JPG（明确是我们自己生成的文件才调用；系统临时文件删不掉时忽略）
-function removeTempFile(path) {
-  if (!path) return
-  try {
-    wx.getFileSystemManager().unlinkSync(path)
-  } catch (err) {
-    // 系统临时文件可能不允许删除，由微信自动回收
-  }
-}
-
-// 清理我们写入用户目录的导出文件（系统临时文件由微信自动管理）
-function removeExportFile(path) {
-  if (!path || path.indexOf(wx.env.USER_DATA_PATH) !== 0) return
-  try {
-    wx.getFileSystemManager().unlinkSync(path)
-  } catch (err) {
-    console.warn('清理导出文件失败', path, err)
   }
 }
 

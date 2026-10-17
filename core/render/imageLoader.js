@@ -28,6 +28,8 @@ function pathOf(photo, variant) {
 function createImageLoader(canvas) {
   // path → { promise, image }
   const cache = {}
+  // 风格素材的路径：常驻，不随翻页释放
+  const pinned = {}
 
   function loadImage(path) {
     if (!cache[path]) {
@@ -83,13 +85,30 @@ function createImageLoader(canvas) {
       if (options.evictOthers) {
         const keep = {}
         photos.forEach(p => { keep[pathOf(p, variant)] = true })
-        Object.keys(cache).forEach(path => { if (!keep[path]) release(path) })
+        Object.keys(cache).forEach(path => { if (!keep[path] && !pinned[path]) release(path) })
       }
+      return map
+    },
+
+    /**
+     * 加载风格素材（背景纹理、装饰图、颗粒），常驻缓存
+     * @param assets { key: 路径 }
+     * @returns { key: { image } }，加载失败的不在结果中
+     */
+    async loadAssets(assets) {
+      const map = {}
+      await Promise.all(Object.keys(assets).map(async key => {
+        const path = assets[key]
+        pinned[path] = true
+        const image = await loadImage(path)
+        if (image) map[key] = { image, exif: 'up', transform: false }
+      }))
       return map
     },
 
     // 释放全部图片
     clear() {
+      Object.keys(pinned).forEach(path => { delete pinned[path] })
       Object.keys(cache).forEach(release)
     }
   }

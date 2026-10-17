@@ -23,7 +23,15 @@ function renderSpread(ctx, album, spread, size, images, options = {}) {
   // 真实的页对象（带页码）；按 side 取用
   const pages = {}
   getSpreadPages(album, spread.id).forEach(p => { pages[p.side] = p })
-  const pageOf = side => pages[side] || { side, slots: spread.slots, info: album.info, pageNumbers: [] }
+  // 不在相册中的跨页（如模板页的示例）没有页码
+  const pageOf = side => pages[side] || {
+    spreadId: spread.id,
+    pageType: spread.pageType,
+    side,
+    slots: spread.slots,
+    info: album.info,
+    pageNumbers: []
+  }
 
   ctx.save()
   ctx.clearRect(0, 0, W, H)

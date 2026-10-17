@@ -2,8 +2,9 @@
 module.exports = {
   id: 'minimal',
   name: '极简纯色',
-  // 适合的主题，首页筛选使用
-  tags: ['nature', 'architecture', 'city-night'],
+  description: '纯色底、无装饰，把注意力留给照片',
+  // 适合的主题（templates/themes.js 的 key），模板页筛选使用
+  tags: ['nature', 'architecture', 'beach', 'city-night'],
   // 图片素材所在分包；纯代码绘制的风格为 null
   assetsPackage: null,
   colors: {

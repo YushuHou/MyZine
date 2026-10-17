@@ -4,6 +4,7 @@ const { createAlbum, addPhotos, removePhoto, reorderPhotos } = require('../../co
 const { choosePhotos } = require('../../core/photos')
 const { buildBook } = require('../../core/book')
 const { getFieldText } = require('../../core/bookInfo')
+const { getStyle } = require('../../core/registry')
 const { privacyErrorText } = require('../../core/wxp')
 const { createGrid, moveItem } = require('../../core/ui/sortable')
 
@@ -23,7 +24,8 @@ Page({
     dragIndex: -1,
     hasBook: false,
     infoTitle: '',
-    infoSub: ''
+    infoSub: '',
+    styleName: ''
   },
 
   onLoad() {
@@ -56,7 +58,8 @@ Page({
       dragIndex: -1,
       hasBook: album.spreads.length > 0,
       infoTitle: getFieldText(info, 'title'),
-      infoSub: getFieldText(info, 'locationDate') || getFieldText(info, 'author')
+      infoSub: getFieldText(info, 'locationDate') || getFieldText(info, 'author'),
+      styleName: getStyle(album.defaultStyleId).name
     })
   },
 
@@ -83,6 +86,10 @@ Page({
 
   onEditInfo() {
     wx.navigateTo({ url: '/pages/info/info' })
+  },
+
+  onChangeTemplate() {
+    wx.navigateTo({ url: '/pages/templates/templates?mode=change' })
   },
 
   // 删除照片；正在照片框中使用的，对应框变为空框
@@ -136,11 +143,11 @@ Page({
 
   // ---------- 制作 ----------
 
+  // 第一次开始制作：先进入模板页，选择或跳过后生成整本书
   onStart() {
     const album = app.globalData.album
     if (!album.photos.length) return
-    album.spreads = buildBook(album)
-    wx.navigateTo({ url: '/pages/editor/editor' })
+    wx.navigateTo({ url: '/pages/templates/templates?mode=first' })
   },
 
   // 保留已做的编辑，新加的照片在照片面板中显示为未使用

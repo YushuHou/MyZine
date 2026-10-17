@@ -5,7 +5,8 @@
     "pages/info/info",
     "pages/spreads/spreads",
     "pages/preview/preview",
-    "pages/export/export"
+    "pages/export/export",
+    "pages/templates/templates"
   ],
   "window": {
     "navigationBarTextStyle": "black",

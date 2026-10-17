@@ -4,7 +4,8 @@ const { getLayout } = require('../registry')
 const { getSpreadPhotos, getSpreadPages } = require('../album')
 const { renderSpread } = require('./renderSpread')
 const { createImageLoader } = require('./imageLoader')
-const { exportCanvas, removeExportFile } = require('../export/saveImage')
+const { exportCanvas, removeExportFile } = require('../export/canvasFile')
+const { loadRenderImages } = require('../styleAssets')
 
 // 跨页内容的缓存 key：版式、风格、照片框；有文字的版式还要算上书籍信息
 function contentKey(album, spread) {
@@ -43,7 +44,7 @@ function createSpreadImageRenderer(options) {
       ctx = canvas.getContext('2d')
       loader = createImageLoader(canvas)
     }
-    const images = await loader.loadPhotos(getSpreadPhotos(album, spread), options.variant || 'display', { evictOthers: true })
+    const images = await loadRenderImages(loader, album, spread, getSpreadPhotos(album, spread), options.variant || 'display', { evictOthers: true })
     renderSpread(ctx, album, spread, { width, height }, images, { blankColor: options.blankColor, spine: options.spine })
     const path = await exportCanvas(canvas, width, height, options.quality || 0.85)
     if (hit) removeExportFile(hit.path)

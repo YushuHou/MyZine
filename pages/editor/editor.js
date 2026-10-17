@@ -6,6 +6,9 @@ const { renderPage } = require('../../core/render/renderPage')
 const { createImageLoader } = require('../../core/render/imageLoader')
 const { frameAtPoint } = require('../../core/render/hitTest')
 const { fillOverflow } = require('../../core/render/photoGeometry')
+const { resolveFrames, photoRect } = require('../../core/render/frames')
+const { loadRenderImages } = require('../../core/styleAssets')
+const C = require('../../core/constants')
 const { getPhotoUsage, formatUsage } = require('../../core/usage')
 
 // 底部工具栏预留高度（px）
@@ -138,16 +141,19 @@ Page({
 
   // ---------- 当前页 ----------
 
+  // 当前页；frames 为应用风格（倾斜、边框）后的照片框，点击检测和拖动换算都用它
   getCurrent() {
     const page = this.pages[this.data.current]
     const spread = getSpread(this.album, page.spreadId)
     const layout = getLayout(spread.layoutId)
-    return { page, spread, layout, layoutPage: getLayoutPage(layout, page.side) }
+    const style = getSpreadStyle(this.album, spread)
+    const layoutPage = getLayoutPage(layout, page.side)
+    return { page, spread, layout, style, layoutPage, frames: resolveFrames(layoutPage.frames, style, spread.id) }
   },
 
   getSelected() {
     const cur = this.getCurrent()
-    const frame = cur.layoutPage.frames.find(f => f.id === this.selectedFrameId)
+    const frame = cur.frames.find(f => f.id === this.selectedFrameId)
     return { cur, frame, slot: frame ? cur.spread.slots[frame.id] : null }
   },
 
@@ -158,7 +164,7 @@ Page({
     if (!this.ctx) return
     const token = this.drawToken = (this.drawToken || 0) + 1
     const { spread } = this.getCurrent()
-    const images = await this.loader.loadPhotos(getSpreadPhotos(this.album, spread), 'display', { evictOthers: true })
+    const images = await loadRenderImages(this.loader, this.album, spread, getSpreadPhotos(this.album, spread), 'display', { evictOthers: true })
     // 加载期间已翻到别的页，放弃本次绘制
     if (token !== this.drawToken) return
     this.images = images
@@ -168,12 +174,12 @@ Page({
   // 用已加载的照片立即重绘（调整照片时使用）
   drawNow() {
     if (!this.ctx || !this.images) return
-    const { page, spread, layout } = this.getCurrent()
+    const { page, layout, style } = this.getCurrent()
     renderPage(
       this.ctx,
       page,
       layout,
-      getSpreadStyle(this.album, spread),
+      style,
       { width: this.canvas.width, height: this.canvas.height },
       this.images,
       {
@@ -249,9 +255,9 @@ Page({
   },
 
   onCanvasTap(touch) {
-    const { spread, layoutPage } = this.getCurrent()
+    const { spread, frames } = this.getCurrent()
     const p = this.toCanvasPoint(touch)
-    const frame = frameAtPoint(layoutPage.frames, this.canvas.width, this.canvas.height, p.x, p.y)
+    const frame = frameAtPoint(frames, this.canvas.width, this.canvas.height, p.x, p.y)
     if (!frame) {
       this.onDeselect()
       return
@@ -280,7 +286,7 @@ Page({
   },
 
   moveAdjust(touches) {
-    const { frame, slot } = this.getSelected()
+    const { cur, frame, slot } = this.getSelected()
     if (!frame || !slot) return
     if (this.pinch && touches.length >= 2) {
       slot.scale = clamp(this.pinch.scale * distance(touches[0], touches[1]) / this.pinch.dist, 1, MAX_SCALE)
@@ -289,7 +295,10 @@ Page({
       if (!photo) return
       const W = this.canvas.width
       const H = this.canvas.height
-      const overflow = fillOverflow(photo.width, photo.height, frame.w * W, frame.h * H, slot.scale)
+      // 按照片实际显示区域（扣掉边框）换算
+      const unit = (cur.page.side === 'full' ? W / 2 : W) / C.PAGE_WIDTH
+      const rect = photoRect(frame, cur.style, W, H, unit)
+      const overflow = fillOverflow(photo.width, photo.height, rect.w, rect.h, slot.scale)
       const p = this.toCanvasPoint(touches[0])
       // 手指向右移，照片跟着向右移，即显示更靠左的部分（offset 变小）
       slot.offsetX = overflow.x > 0 ? clamp(this.drag.offsetX - 2 * (p.x - this.drag.point.x) / overflow.x, -1, 1) : 0
