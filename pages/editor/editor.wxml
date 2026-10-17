@@ -7,7 +7,7 @@
   <view class="toolbar">
     <view class="pager">
       <button class="nav" size="mini" disabled="{{current <= 0}}" bindtap="onPrev">上一页</button>
-      <view class="pager-text">{{current + 1}} / {{total}}</view>
+      <view class="pager-text">{{label}}<text class="pager-count">  {{current + 1}}/{{total}}</text></view>
       <button class="nav" size="mini" disabled="{{current >= total - 1}}" bindtap="onNext">下一页</button>
     </view>
     <view class="actions">
@@ -15,7 +15,8 @@
         <text>参考线</text>
         <switch checked="{{guides}}" color="#B5835A" bindchange="onToggleGuides" />
       </view>
-      <button class="btn-primary save-btn" disabled="{{saving}}" bindtap="onSave">保存本页到相册</button>
+      <button class="btn-secondary info-btn" bindtap="onEditInfo">书籍信息</button>
+      <button class="btn-primary save-btn" disabled="{{saving}}" bindtap="onSave">保存本页</button>
     </view>
   </view>
 </view>

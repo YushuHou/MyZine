@@ -2,11 +2,12 @@
 const C = require('../constants')
 const { computePlacement } = require('./photoGeometry')
 const { isRotated90, applyExifTransform } = require('./exif')
+const { drawTextBlock } = require('./text')
 
 /**
  * 把一页画到 canvas 上。所有尺寸按画布宽度等比换算，同一函数可输出 1080 宽和 2480 宽
  * @param ctx     canvas 2d 上下文
- * @param page    getPageList() 产出的页 { side, slots }
+ * @param page    getPageList() 产出的页 { side, slots, info }
  * @param layout  版式
  * @param style   风格
  * @param size    画布尺寸 { width, height }：单页 3:4，跨页大图（side = full）3:2
@@ -24,11 +25,18 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, W, H)
   drawBackground(ctx, style, W, H)
+  // 版式指定的整页底色（如环衬），取风格中的同名颜色
+  if (layoutPage.fill) {
+    ctx.fillStyle = style.colors[layoutPage.fill] || layoutPage.fill
+    ctx.fillRect(0, 0, W, H)
+  }
   drawDecorations(ctx, style, page.side, W, H, unit)
   layoutPage.frames.forEach(frame => {
     drawFrame(ctx, frame, page.slots[frame.id], style, images, W, H, unit)
   })
-  // 阶段2：在这里绘制 layoutPage.texts（书名、作者等）
+  ;(layoutPage.texts || []).forEach(block => {
+    drawTextBlock(ctx, block, page.info, style, W, H, unit)
+  })
   if (options.guides) drawGuides(ctx, page.side, W, H, unit)
   ctx.restore()
 }

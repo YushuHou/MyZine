@@ -10,8 +10,8 @@ function newId(prefix) {
 function createAlbum() {
   return {
     version: 1,
-    // 书籍信息（阶段2 填写）
-    info: { title: '', author: '', companions: '', location: '', date: '', message: '' },
+    // 书籍信息，全部选填；日期为 'YYYY-MM-DD'，结束日期可空（一日游）
+    info: { title: '', author: '', companions: '', location: '', dateStart: '', dateEnd: '', message: '' },
     // 主模板（风格）；跨页的 styleId 为 null 时使用它
     defaultStyleId: DEFAULT_STYLE_ID,
     // 照片，顺序 = 用户选择顺序
@@ -24,6 +24,11 @@ function createAlbum() {
 // 照片框的显示参数；换照片时整体重置为默认（填满、居中、不缩放）
 function createSlot(photoId) {
   return { photoId, fit: 'fill', offsetX: 0, offsetY: 0, scale: 1 }
+}
+
+// 跨页；styleId 为 null 表示跟随主模板
+function createSpread(pageType, layoutId, slots) {
+  return { id: newId('s'), pageType, layoutId, styleId: null, slots: slots || {} }
 }
 
 function addPhotos(album, photos) {
@@ -59,17 +64,40 @@ function getSpreadPhotos(album, spread) {
   return album.photos.filter(p => ids[p.id])
 }
 
+// 非正文页的显示名称；扉页跨页的左页是环衬
+function pageLabel(pageType, side) {
+  if (pageType === 'cover') return '封面'
+  if (pageType === 'back') return '封底'
+  if (pageType === 'title') return side === 'left' ? '环衬' : '扉页'
+  return ''
+}
+
 /**
  * 把相册展开为逐页列表（编辑页一屏一页、导出逐页渲染都基于它，不存储）
  * side：left / right 为左右页；full 为跨页大图（一张 2160×1440）；single 为封面、封底等单页
+ * label：封面 / 环衬 / 扉页 / P1… / 封底，正文按正文页单独编号，跨页大图算两页
  */
 function getPageList(album) {
   const pages = []
+  let bodyNo = 0
   album.spreads.forEach(spread => {
     const layout = getLayout(spread.layoutId)
     const sides = layout.span === 'pair' ? ['left', 'right'] : layout.span === 'spread' ? ['full'] : ['single']
     sides.forEach(side => {
-      pages.push({ spreadId: spread.id, side, pageIndex: pages.length + 1, slots: spread.slots })
+      let label = pageLabel(spread.pageType, side)
+      if (!label) {
+        label = side === 'full' ? `P${bodyNo + 1}-${bodyNo + 2}` : `P${bodyNo + 1}`
+        bodyNo += side === 'full' ? 2 : 1
+      }
+      pages.push({
+        spreadId: spread.id,
+        pageType: spread.pageType,
+        side,
+        label,
+        pageIndex: pages.length + 1,
+        slots: spread.slots,
+        info: album.info
+      })
     })
   })
   return pages
@@ -79,6 +107,7 @@ module.exports = {
   newId,
   createAlbum,
   createSlot,
+  createSpread,
   addPhotos,
   removePhoto,
   getPhoto,

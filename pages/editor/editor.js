@@ -34,6 +34,7 @@ Page({
     canvasH: 0,
     current: 0,
     total: 0,
+    label: '',
     guides: false,
     saving: false
   },
@@ -47,7 +48,12 @@ Page({
     this.pages = getPageList(this.album)
     this.windowInfo = getWindowInfo()
     const size = computeCanvasSize(this.windowInfo)
-    this.setData({ canvasW: size.w, canvasH: size.h, total: this.pages.length })
+    this.setData({ canvasW: size.w, canvasH: size.h, total: this.pages.length, label: this.pages[0].label })
+  },
+
+  // 从书籍信息页返回时重绘，封面和扉页立即更新（首次显示时画布还没准备好，draw 会直接返回）
+  onShow() {
+    this.draw()
   },
 
   onReady() {
@@ -94,7 +100,7 @@ Page({
 
   goTo(index) {
     if (index < 0 || index >= this.pages.length || index === this.data.current) return
-    this.setData({ current: index })
+    this.setData({ current: index, label: this.pages[index].label })
     this.draw()
   },
 
@@ -121,6 +127,10 @@ Page({
   onToggleGuides(e) {
     this.setData({ guides: e.detail.value })
     this.draw()
+  },
+
+  onEditInfo() {
+    wx.navigateTo({ url: '/pages/info/info' })
   },
 
   async onSave() {

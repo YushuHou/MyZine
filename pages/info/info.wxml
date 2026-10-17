@@ -1,0 +1,50 @@
+<!-- 书籍信息：全部选填 -->
+<view class="page">
+  <view class="tip">以下内容都可以不填，空着的项目不会出现在书里</view>
+
+  <view class="form">
+    <view class="field">
+      <view class="label">书名</view>
+      <input class="input" value="{{info.title}}" data-field="title" maxlength="20" placeholder="例如：京都七日" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <view class="label">作者</view>
+      <input class="input" value="{{info.author}}" data-field="author" maxlength="20" placeholder="你的名字" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <view class="label">同游人</view>
+      <input class="input" value="{{info.companions}}" data-field="companions" maxlength="40" placeholder="一起旅行的人" bindinput="onInput" />
+    </view>
+    <view class="field">
+      <view class="label">旅行地点</view>
+      <input class="input" value="{{info.location}}" data-field="location" maxlength="20" placeholder="例如：日本 · 京都" bindinput="onInput" />
+    </view>
+
+    <view class="field">
+      <view class="label">旅行日期</view>
+      <view class="dates">
+        <picker mode="date" value="{{info.dateStart}}" data-field="dateStart" bindchange="onDateChange">
+          <view class="date {{startText ? '' : 'placeholder'}}">{{startText || '开始日期'}}</view>
+        </picker>
+        <text class="dash">–</text>
+        <picker mode="date" value="{{info.dateEnd || info.dateStart}}" start="{{info.dateStart || '1970-01-01'}}" data-field="dateEnd" bindchange="onDateChange">
+          <view class="date {{endText ? '' : 'placeholder'}}">{{endText || '结束（可选）'}}</view>
+        </picker>
+      </view>
+    </view>
+    <view wx:if="{{dateText}}" class="date-preview">
+      <text>书中显示：{{dateText}}</text>
+      <text wx:if="{{endText}}" class="link" bindtap="onClearEnd">只保留开始日期</text>
+      <text class="link" bindtap="onClearDate">清除日期</text>
+    </view>
+
+    <view class="field field-column">
+      <view class="label">想说的话</view>
+      <textarea class="textarea" value="{{info.message}}" data-field="message" maxlength="200" placeholder="写在扉页上，最多 200 字" auto-height bindinput="onInput" />
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="btn-primary" bindtap="onDone">完成</button>
+  </view>
+</view>

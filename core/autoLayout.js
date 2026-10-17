@@ -1,6 +1,6 @@
 // 自动排版：照片按顺序填入正文跨页，按方向匹配版式并轮换
 const { listLayouts, getLayoutFrames } = require('./registry')
-const { newId, createSlot } = require('./album')
+const { createSpread, createSlot } = require('./album')
 
 // 照片方向与框方向的匹配分：一致 2，任一方为方形 1，横竖相反 0
 function matchScore(frameOrientation, photoOrientation) {
@@ -56,7 +56,7 @@ function autoLayout(album) {
       const photo = photos[i + k]
       if (photo) slots[frame.id] = createSlot(photo.id)
     })
-    spreads.push({ id: newId('s'), pageType: 'body', layoutId: best.layout.id, styleId: null, slots })
+    spreads.push(createSpread('body', best.layout.id, slots))
 
     usage[best.layout.id]++
     lastId = best.layout.id

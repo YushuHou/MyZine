@@ -5,6 +5,14 @@
     <view class="subtitle">把旅行照片做成照片书</view>
   </view>
 
+  <view class="info-card" bindtap="onEditInfo">
+    <view class="info-main">
+      <view class="info-title {{infoTitle ? '' : 'info-empty'}}">{{infoTitle || '书籍信息'}}</view>
+      <view class="info-sub">{{infoSub || (infoTitle ? '点击修改书籍信息' : '书名、作者、旅行地点等，点击填写（选填）')}}</view>
+    </view>
+    <view class="info-arrow">›</view>
+  </view>
+
   <view wx:if="{{!photos.length}}" class="empty" bindtap="onAddPhotos">
     <view class="empty-plus">+</view>
     <view class="empty-text">添加照片</view>

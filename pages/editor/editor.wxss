@@ -32,8 +32,11 @@ page {
   margin: 0 !important;
 }
 .pager-text {
-  min-width: 120rpx;
+  min-width: 200rpx;
   text-align: center;
+}
+.pager-count {
+  font-size: 24rpx;
   color: #8A847A;
 }
 
@@ -48,6 +51,11 @@ page {
   align-items: center;
   gap: 8rpx;
   color: #8A847A;
+}
+.info-btn {
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 28rpx !important;
 }
 .save-btn {
   flex: 1;

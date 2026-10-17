@@ -16,9 +16,46 @@
   color: #8A847A;
 }
 
+/* 书籍信息卡片 */
+.info-card {
+  display: flex;
+  align-items: center;
+  margin-bottom: 32rpx;
+  padding: 28rpx;
+  background: #FFFFFF;
+  border-radius: 20rpx;
+}
+.info-main {
+  flex: 1;
+  min-width: 0;
+}
+.info-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.info-empty {
+  font-weight: normal;
+}
+.info-sub {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: #8A847A;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.info-arrow {
+  margin-left: 16rpx;
+  font-size: 44rpx;
+  color: #C9C1B3;
+}
+
 /* 空状态 */
 .empty {
-  margin-top: 60rpx;
+  margin-top: 0;
   height: 480rpx;
   border: 4rpx dashed #C9C1B3;
   border-radius: 24rpx;

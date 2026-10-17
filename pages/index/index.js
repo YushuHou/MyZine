@@ -2,14 +2,17 @@
 const app = getApp()
 const { createAlbum, addPhotos, removePhoto } = require('../../core/album')
 const { choosePhotos } = require('../../core/photos')
-const { autoLayout } = require('../../core/autoLayout')
+const { buildBook } = require('../../core/book')
+const { getFieldText } = require('../../core/bookInfo')
 const { privacyErrorText } = require('../../core/wxp')
 
 const ORIENTATION_LABELS = { landscape: '横', portrait: '竖', square: '方' }
 
 Page({
   data: {
-    photos: []
+    photos: [],
+    infoTitle: '',
+    infoSub: ''
   },
 
   onLoad() {
@@ -22,8 +25,11 @@ Page({
 
   refresh() {
     const album = app.globalData.album
+    const info = album.info
     this.setData({
-      photos: album.photos.map(p => ({ id: p.id, src: p.displayPath, label: ORIENTATION_LABELS[p.orientation] }))
+      photos: album.photos.map(p => ({ id: p.id, src: p.displayPath, label: ORIENTATION_LABELS[p.orientation] })),
+      infoTitle: getFieldText(info, 'title'),
+      infoSub: getFieldText(info, 'locationDate') || getFieldText(info, 'author')
     })
   },
 
@@ -48,6 +54,10 @@ Page({
     }
   },
 
+  onEditInfo() {
+    wx.navigateTo({ url: '/pages/info/info' })
+  },
+
   onRemove(e) {
     removePhoto(app.globalData.album, e.currentTarget.dataset.id)
     this.refresh()
@@ -56,7 +66,7 @@ Page({
   onStart() {
     const album = app.globalData.album
     if (!album.photos.length) return
-    album.spreads = autoLayout(album)
+    album.spreads = buildBook(album)
     wx.navigateTo({ url: '/pages/editor/editor' })
   }
 })
