@@ -18,6 +18,7 @@ module.exports = [].concat(
     require('./nature'),
     require('./food'),
     require('./farm'),
-    require('./roadtrip')
+    require('./roadtrip'),
+    require('./heritage')
   ]
 )

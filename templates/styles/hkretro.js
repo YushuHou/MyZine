@@ -24,7 +24,13 @@ module.exports = {
     body: { family: 'sans-serif', weight: 'normal', size: 32, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 24, lineHeight: 1.5, color: 'textMuted', letterSpacing: 2 }
   },
-  wordPool: ['Neon Nights', 'Midnight Express', 'Last Tram', 'After Dark', 'Fallen Lights', 'Slow Burn', 'Night Market'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Neon Nights', 'Midnight Express', 'Last Tram', 'After Dark', 'Fallen Lights', 'Slow Burn',
+    'Night Market', 'City of Lights', 'Neon Dreams', 'Late Show', 'Rainy Neon', 'Night Owls', 'Back Alley',
+    'Electric Blue', 'Last Call', 'Lights On', 'Red Lantern', 'Midnight Snack', 'Moonlit Street',
+    'After Hours', 'Star Ferry'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'oswald', family: 'sans-serif', size: 124, uppercase: true, color: 'accent' }, minScale: 0.45 },
     kicker: { text: '{location} · {year}', font: { glyph: 'oswald', family: 'sans-serif', size: 26, letterSpacing: 6, uppercase: true, color: 'yellow' } },

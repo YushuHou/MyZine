@@ -5,6 +5,7 @@ const { textureSize } = require('./textures')
 const { drawStamp, drawPostmark, drawAirmailBorder } = require('./postcard')
 const { drawOutline, drawHalftone } = require('./paperCraft')
 const { drawPlateRim, drawCornerDoodle, drawCheckerBorder, drawFenceBorder, drawRoute } = require('./themeDeco')
+const { fillPattern, drawPatternBand, drawPatternBlock } = require('./patterns')
 
 // 风格颜色：可写 colors 中的键名，也可直接写颜色值
 function colorOf(style, value, fallback) {
@@ -25,12 +26,19 @@ function drawTiled(ctx, image, W, H, tile) {
  *   { type: 'color', color }
  *   { type: 'texture', texture: 'paper', tile（基准 px）, color（底色） }
  *   { type: 'image', src, repeat: 'tile' | 'cover', tile, color }
+ *   以上都可加 pattern: { name, color, alpha, cell }：在底色 / 纹理之上铺一层低对比度的几何纹样
  * @param colorOverride 页面底色（版式指定或风格 pagePalette 选出）；有纹理时纹理以「正片叠底」叠在底色上
  */
 function drawBackground(ctx, style, W, H, unit, images, colorOverride) {
   const bg = style.background || {}
-  ctx.fillStyle = colorOf(style, colorOverride, null) || bg.color || style.colors.background
+  const base = colorOf(style, colorOverride, null) || bg.color || style.colors.background
+  ctx.fillStyle = base
   ctx.fillRect(0, 0, W, H)
+  drawBackgroundImage(ctx, style, bg, W, H, unit, images, colorOverride)
+  if (bg.pattern) fillPattern(ctx, style, bg.pattern, 0, 0, W, H, base, unit)
+}
+
+function drawBackgroundImage(ctx, style, bg, W, H, unit, images, colorOverride) {
   if (bg.type !== 'image' && bg.type !== 'texture') return
   const entry = images[bg.type === 'texture' ? `asset:texture:${bg.texture}` : `asset:${bg.src}`]
   if (!entry) return
@@ -57,11 +65,20 @@ function pageColorOf(style, page, layoutPage) {
   return palette[Math.floor(hashRandom(`palette:${page.spreadId || ''}:${page.side}`) * palette.length)]
 }
 
-// 版式色块：layoutPage.blocks = [{ x, y, w, h, color }]（0–1 坐标），画在背景之上、照片之下
-function drawBlocks(ctx, style, layoutPage, W, H) {
+// 本页底色（实色）：纹样混色、印章斑点用
+function pageBaseColor(style, page, layoutPage) {
+  return colorOf(style, pageColorOf(style, page, layoutPage), null) || (style.background || {}).color || style.colors.background
+}
+
+// 版式色块：layoutPage.blocks = [{ x, y, w, h, color, pattern }]（0–1 坐标），画在背景之上、照片之下
+// 风格 blockPattern（{ name, color, alpha, cell }）给所有版式色块叠一层纹样
+function drawBlocks(ctx, style, layoutPage, W, H, unit) {
   ;(layoutPage.blocks || []).forEach(b => {
-    ctx.fillStyle = colorOf(style, b.color, '#FFFFFF')
+    const color = colorOf(style, b.color, '#FFFFFF')
+    ctx.fillStyle = color
     ctx.fillRect(b.x * W, b.y * H, b.w * W, b.h * H)
+    const pattern = b.pattern || style.blockPattern
+    if (pattern) fillPattern(ctx, style, pattern, b.x * W, b.y * H, b.w * W, b.h * H, color, unit || 1)
   })
 }
 
@@ -114,52 +131,65 @@ function roundRect(ctx, x, y, w, h, r) {
  * - airmailBorder 航空信封红蓝斜条页边：{ colors, width, stripe }
  * - halftone 半调网点色块：{ x, y, w, h, color, dot, gap, fade }
  * - checkerBorder 格纹桌布页边、fenceBorder 木栅栏页边、route 虚线路线（见 themeDeco.js）
+ * - patternBand 纹样页边条、patternBlock 纹样色块（见 patterns.js）；rect 也可加 pattern 叠纹样
  * 通用：chance（偶尔出现）、mirror（右页镜像）、pages、pageTypes
+ * @param bg 本页底色（纹样混色用）
  */
-function drawDecorations(ctx, style, page, W, H, unit, images) {
+function drawDecorations(ctx, style, page, W, H, unit, images, bg) {
   ;(style.decorations || []).forEach((d, index) => {
     if (!appliesTo(d, page, index)) return
-    ctx.save()
-    if (d.type === 'rect') {
-      ctx.fillStyle = colorOf(style, d.color, '#000')
-      ctx.fillRect(mirroredX(d, page) * W, d.y * H, d.w * W, d.h * H)
-    } else if (d.type === 'airmailBorder') {
-      drawAirmailBorder(ctx, style, d, page, W, H, unit)
-    } else if (d.type === 'halftone') {
-      drawHalftone(ctx, style, d, mirroredX(d, page) * W, d.y * H, d.w * W, d.h * H, unit)
-    } else if (d.type === 'checkerBorder') {
-      drawCheckerBorder(ctx, style, d, page, W, H, unit)
-    } else if (d.type === 'fenceBorder') {
-      drawFenceBorder(ctx, style, d, page, W, H, unit)
-    } else if (d.type === 'route') {
-      drawRoute(ctx, style, d, page, W, H, unit)
-    } else if (d.type === 'line') {
-      ctx.strokeStyle = colorOf(style, d.color, '#000')
-      ctx.lineWidth = (d.lineWidth || 2) * unit
-      ctx.beginPath()
-      ctx.moveTo(d.x * W, d.y * H)
-      ctx.lineTo((d.x + d.w) * W, (d.y + d.h) * H)
-      ctx.stroke()
-    } else if (d.type === 'image') {
-      const entry = images[`asset:${d.src}`]
-      if (entry) ctx.drawImage(entry.image, d.x * W, d.y * H, d.w * W, d.h * H)
-    } else if (d.type === 'text') {
-      drawDecorationText(ctx, style, d, page, W, H, unit)
-    } else if (d.type === 'perforation') {
-      drawPerforation(ctx, style, d, W, H, unit)
-    } else if (d.type === 'gutterLine') {
-      const x = page.side === 'left' ? W : page.side === 'right' ? 0 : page.side === 'full' ? W / 2 : -1
-      if (x >= 0) {
-        ctx.strokeStyle = colorOf(style, d.color, style.colors.accent)
-        ctx.lineWidth = Math.max(1, (d.width || 2) * unit)
-        ctx.beginPath()
-        ctx.moveTo(x, 0)
-        ctx.lineTo(x, H)
-        ctx.stroke()
-      }
-    }
-    ctx.restore()
+    drawDecoration(ctx, style, d, page, W, H, unit, images, bg)
   })
+}
+
+// 画一个页面装饰（装饰计划里的大装饰也用它）
+function drawDecoration(ctx, style, d, page, W, H, unit, images, bg) {
+  ctx.save()
+  if (d.type === 'rect') {
+    const color = colorOf(style, d.color, '#000')
+    ctx.fillStyle = color
+    ctx.fillRect(mirroredX(d, page) * W, d.y * H, d.w * W, d.h * H)
+    if (d.pattern) fillPattern(ctx, style, d.pattern, mirroredX(d, page) * W, d.y * H, d.w * W, d.h * H, color, unit)
+  } else if (d.type === 'patternBand') {
+    drawPatternBand(ctx, style, d, page, W, H, unit, bg || style.colors.background)
+  } else if (d.type === 'patternBlock') {
+    drawPatternBlock(ctx, style, d, page, W, H, unit, bg || style.colors.background)
+  } else if (d.type === 'airmailBorder') {
+    drawAirmailBorder(ctx, style, d, page, W, H, unit)
+  } else if (d.type === 'halftone') {
+    drawHalftone(ctx, style, d, mirroredX(d, page) * W, d.y * H, d.w * W, d.h * H, unit)
+  } else if (d.type === 'checkerBorder') {
+    drawCheckerBorder(ctx, style, d, page, W, H, unit)
+  } else if (d.type === 'fenceBorder') {
+    drawFenceBorder(ctx, style, d, page, W, H, unit)
+  } else if (d.type === 'route') {
+    drawRoute(ctx, style, d, page, W, H, unit)
+  } else if (d.type === 'line') {
+    ctx.strokeStyle = colorOf(style, d.color, '#000')
+    ctx.lineWidth = (d.lineWidth || 2) * unit
+    ctx.beginPath()
+    ctx.moveTo(d.x * W, d.y * H)
+    ctx.lineTo((d.x + d.w) * W, (d.y + d.h) * H)
+    ctx.stroke()
+  } else if (d.type === 'image') {
+    const entry = images[`asset:${d.src}`]
+    if (entry) ctx.drawImage(entry.image, d.x * W, d.y * H, d.w * W, d.h * H)
+  } else if (d.type === 'text') {
+    drawDecorationText(ctx, style, d, page, W, H, unit)
+  } else if (d.type === 'perforation') {
+    drawPerforation(ctx, style, d, W, H, unit)
+  } else if (d.type === 'gutterLine') {
+    const x = page.side === 'left' ? W : page.side === 'right' ? 0 : page.side === 'full' ? W / 2 : -1
+    if (x >= 0) {
+      ctx.strokeStyle = colorOf(style, d.color, style.colors.accent)
+      ctx.lineWidth = Math.max(1, (d.width || 2) * unit)
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, H)
+      ctx.stroke()
+    }
+  }
+  ctx.restore()
 }
 
 function drawDecorationText(ctx, style, d, page, W, H, unit) {
@@ -215,7 +245,8 @@ function drawPerforation(ctx, style, d, W, H, unit) {
  * @param frame  resolveFrames 之后的照片框
  * @param rect   照片框外形区域（画布 px）{ x, y, w, h }
  * @param seed   随机种子
- * @param ctxInfo { info: 书籍信息, isLargest: 是否为本页最大的照片框 }
+ * @param ctxInfo { info: 书籍信息, isLargest: 是否为本页最大的照片框,
+ *                  names: 装饰计划分好的线稿名 { stamp, corner }（null 表示本跨页没有可用的线稿，不画）}
  */
 function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {}) {
   // 满版、不加边框的框（如四格条）不贴胶带等装饰
@@ -228,8 +259,9 @@ function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {})
     if (d.minWidth && rect.w < d.minWidth * unit) return
     // 邮票、邮戳只贴在矩形照片上（圆形、拱形的外接方框角上是空的）
     if ((d.type === 'stamp' || d.type === 'postmark') && frame.shape !== 'rect' && frame.shape !== 'rounded') return
+    const names = ctxInfo.names || {}
     if (d.type === 'tape') drawTapes(ctx, d, rect, unit, seed)
-    else if (d.type === 'stamp') stampRect = drawStamp(ctx, style, d, rect, unit, seed)
+    else if (d.type === 'stamp') stampRect = drawStamp(ctx, style, names.stamp ? Object.assign({}, d, { doodles: [names.stamp] }) : d, rect, unit, seed)
     else if (d.type === 'postmark') {
       // 没有邮票时，邮戳压在照片右上角（position: 'top-left' 时在左上角，如票根的副券在右侧）
       const R = (d.r || 74) * unit
@@ -238,7 +270,9 @@ function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {})
       drawPostmark(ctx, style, d, anchor, ctxInfo.info, unit, seed)
     } else if (d.type === 'outline') drawOutline(ctx, style, d, rect, unit)
     else if (d.type === 'plateRim') drawPlateRim(ctx, style, d, frame, rect, unit)
-    else if (d.type === 'cornerDoodle') drawCornerDoodle(ctx, style, d, rect, unit, seed)
+    else if (d.type === 'cornerDoodle' && names.corner !== null) {
+      drawCornerDoodle(ctx, style, names.corner ? Object.assign({}, d, { names: [names.corner] }) : d, rect, unit, seed)
+    }
   })
 }
 
@@ -316,4 +350,4 @@ function drawDateStamp(ctx, style, rect, info, unit) {
   ctx.restore()
 }
 
-module.exports = { colorOf, drawBackground, pageColorOf, drawBlocks, drawGrain, drawDecorations, drawFrameDecorations, drawDateStamp }
+module.exports = { colorOf, drawBackground, pageColorOf, pageBaseColor, drawBlocks, drawGrain, drawDecorations, drawDecoration, drawFrameDecorations, drawDateStamp }

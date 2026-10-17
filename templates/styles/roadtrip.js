@@ -25,7 +25,13 @@ module.exports = {
     body: { family: 'sans-serif', weight: 'normal', size: 32, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 24, lineHeight: 1.5, color: 'textMuted', letterSpacing: 2 }
   },
-  wordPool: ['On the Road', 'Miles & Smiles', 'Next Exit', 'Scenic Route', 'Full Tank', 'Detour', 'Keep Driving'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'On the Road', 'Miles & Smiles', 'Next Exit', 'Scenic Route', 'Full Tank', 'Detour', 'Keep Driving',
+    'Road Snacks', 'Windows Down', 'Mile Marker', 'Highway Song', 'Pit Stop', 'Map Notes', 'Open Highway',
+    'Rest Stop', 'Road Less Traveled', 'Turn Left', 'Gas & Go', 'Cruise Control', 'Long Drive',
+    'Sunset Drive'
+  ],
   decoText: {
     // 路牌：绿底白字 + 白色内框
     headline: {

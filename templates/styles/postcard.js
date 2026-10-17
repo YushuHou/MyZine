@@ -28,7 +28,13 @@ module.exports = {
     body: { family: 'serif', weight: 'normal', size: 34, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 26, lineHeight: 1.5, color: 'textMuted', letterSpacing: 2 }
   },
-  wordPool: ['Sea Breeze', 'Salt & Sun', 'Low Tide', 'Wish You Were Here', 'Blue Hours', 'Seaside Days'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Sea Breeze', 'Salt & Sun', 'Low Tide', 'Wish You Were Here', 'Blue Hours', 'Seaside Days',
+    'Hello from the Sea', 'Ocean Air', 'Sandy Toes', 'High Tide', 'Coastal Days', 'Beach Mail', 'Sun & Sand',
+    'Tidal Notes', 'Seashells', 'Shoreline', 'Wave Hello', 'Postcard Days', 'Saltwater', 'Blue Horizon',
+    'Endless Summer'
+  ],
   decoText: {
     // 封面问候语：第一行 MZ Playfair 字形，第二行地点用较大的系统衬线字；无地点时只写 Greetings
     greeting: {
@@ -68,9 +74,22 @@ module.exports = {
   },
   decorations: [
     // 航空信封红蓝斜条：封面始终有，正文约三分之一的页出现
-    { type: 'airmailBorder', colors: ['red', 'blue'], width: 22, stripe: 28, pageTypes: ['cover'] },
-    { type: 'airmailBorder', colors: ['red', 'blue'], width: 22, stripe: 28, pageTypes: ['body'], chance: 0.3 }
+    { type: 'airmailBorder', colors: ['red', 'blue'], width: 22, stripe: 28, pageTypes: ['cover'] }
   ],
+  // 装饰计划（阶段 7c）：大装饰为海浪剪影、顶边青海波或航空信封斜条（正文的斜条从 decorations 移到这里）
+  ornaments: {
+    big: [
+      { type: 'scenery', kinds: ['waves'], layers: [2, 3], color: 'accent', mix: [0.82, 0.7, 0.58], desaturate: 0.25, height: [0.12, 0.2], weight: 3 },
+      { type: 'patternBand', name: 'seigaiha', edges: ['top'], width: 84, color: 'accent', alpha: 0.28, cell: 34, weight: 1.5 },
+      { type: 'deco', deco: { type: 'airmailBorder', colors: ['red', 'blue'], width: 22, stripe: 28 }, weight: 1 }
+    ],
+    small: [
+      { type: 'doodle', weight: 3 },
+      { type: 'passport', size: [170, 200], count: [1, 2], colors: ['accent', 'red'], weight: 1 }
+    ],
+    smallPerSpread: [2, 3],
+    pageTypes: ['body']
+  },
   layoutWeights: {
     'b-CI-L1': 4,
     'b-FB-P1S': 2.5,

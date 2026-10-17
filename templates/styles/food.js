@@ -23,7 +23,13 @@ module.exports = {
     body: { family: 'serif', weight: 'normal', size: 32, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 24, lineHeight: 1.5, color: 'textMuted', letterSpacing: 2 }
   },
-  wordPool: ['Yum!', 'Bon Appétit', "Today's Menu", 'Second Helping', 'Taste Notes', 'Table for Two', 'Sweet Tooth'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Yum!', 'Bon Appétit', "Today's Menu", 'Second Helping', 'Taste Notes', 'Table for Two', 'Sweet Tooth',
+    'Delicious', 'Good Eats', "Chef's Special", 'Tasty Trip', 'Snack Attack', 'Dessert First', 'Fresh & Hot',
+    'Local Flavors', 'Street Eats', 'Brunch Club', 'Spoonful', 'Hungry Again', 'Coffee Break',
+    'Sweet & Salty'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'caveat', family: 'serif', size: 120, color: 'accent' }, minScale: 0.5 },
     kicker: { text: '{location} · {date}', font: { glyph: 'oswald', family: 'sans-serif', size: 24, letterSpacing: 4, uppercase: true, color: 'text' } }
@@ -53,9 +59,22 @@ module.exports = {
   },
   decorations: [
     // 红白格纹桌布：封面四周；正文约 1/3 的页只在上下边
-    { type: 'checkerBorder', color: 'accent', width: 56, check: 18, edges: ['top', 'bottom', 'side'], pageTypes: ['cover'] },
-    { type: 'checkerBorder', color: 'accent', width: 44, check: 16, edges: ['top', 'bottom'], pageTypes: ['body'], chance: 0.35 }
+    { type: 'checkerBorder', color: 'accent', width: 56, check: 18, edges: ['top', 'bottom', 'side'], pageTypes: ['cover'] }
   ],
+  // 装饰计划（阶段 7c）：大装饰为格纹桌布页边（从 decorations 移到这里）或外侧下角的波点 / 条纹桌布色块
+  ornaments: {
+    big: [
+      { type: 'deco', deco: { type: 'checkerBorder', color: 'accent', width: 44, check: 16, edges: ['top', 'bottom'] }, weight: 2 },
+      { type: 'patternBlock', name: 'dots', x: 0, y: 0.78, w: 0.26, h: 0.22, mirror: true, fill: 'endpaper', color: 'accent', alpha: 0.45, cell: 30, weight: 1.5 },
+      { type: 'patternBlock', name: 'stripes', x: 0, y: 0, w: 0.24, h: 0.2, mirror: true, fill: 'endpaper', color: 'olive', alpha: 0.35, cell: 28, angle: 0, weight: 1 }
+    ],
+    small: [
+      { type: 'doodle', weight: 3 },
+      { type: 'seal', size: [120, 150], weight: 1.5 }
+    ],
+    smallPerSpread: [2, 3],
+    pageTypes: ['body']
+  },
   // 偏好餐盘（圆形）版式
   layoutWeights: {
     'b-PL-P1': 4,

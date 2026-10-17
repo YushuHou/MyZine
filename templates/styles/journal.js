@@ -25,8 +25,12 @@ module.exports = {
   },
   // 手账风格不印页码
   pageNumber: { show: false },
-  // 手写体西文标题（装饰词），放在版式的留白标题槽
-  wordPool: ['Good Days', 'Summer Travel', 'Yum!', 'Happy Trip', 'Little Things', 'Oh Happy Day', 'Hello Sunshine', 'Sweet Memories'],
+  // 手写体西文标题（装饰词），放在版式的留白标题槽；整本书不重复：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Good Days', 'Summer Travel', 'Yum!', 'Happy Trip', 'Little Things', 'Oh Happy Day', 'Hello Sunshine',
+    'Sweet Memories', 'Best Day Ever', 'So Fun', 'Snack Time', 'Little Joys', 'Hello Friend', 'Weekend Mood',
+    'Yay!', 'Happy Moments', 'Just Us', 'Oh My!', 'Lovely Day', 'Pocket Notes', 'Sunny Side'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'caveat', family: 'serif', size: 120, color: 'accent' }, minScale: 0.5 },
     kicker: { text: '{month} {year}', font: { glyph: 'caveat', family: 'serif', size: 44, color: 'textMuted' } }
@@ -75,5 +79,18 @@ module.exports = {
       angleJitter: 10
     }
   ],
-  decorations: []
+  decorations: [],
+  // 装饰计划（阶段 7c）：大装饰为整页手账纸底纹；小装饰 2–3 个（线稿、护照章、方印）
+  ornaments: {
+    big: [
+      { type: 'pagePattern', names: ['grid', 'dotgrid', 'lined'], color: 'textMuted', alpha: 0.32, cell: 44, margin: '#D98C8C' }
+    ],
+    small: [
+      { type: 'doodle', weight: 4 },
+      { type: 'passport', size: [160, 190], count: [1, 2], colors: ['#7FA79B', '#D9825B', '#8C7BB0'], weight: 1 },
+      { type: 'seal', size: [120, 150], weight: 1 }
+    ],
+    smallPerSpread: [2, 3],
+    pageTypes: ['body']
+  }
 }

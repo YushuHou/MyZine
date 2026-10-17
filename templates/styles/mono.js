@@ -22,7 +22,12 @@ module.exports = {
     body: { family: 'serif', weight: 'normal', size: 32, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 24, lineHeight: 1.5, color: 'textMuted', letterSpacing: 3 }
   },
-  wordPool: ['Black & White', 'Shadows', 'Silence', 'Contrast', 'Monochrome', 'Still Life', 'Light Study'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Black & White', 'Shadows', 'Silence', 'Contrast', 'Monochrome', 'Still Life', 'Light Study',
+    'Grayscale', 'Light & Shade', 'Quiet Frames', 'Silver Hour', 'In Between', 'Negative Space', 'Black Ink',
+    'Still', 'Shades of Gray', 'Silhouette', 'Afterimage', 'Daylight', 'Noir', 'Long Exposure'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'playfair', family: 'serif', size: 130, color: 'text' }, minScale: 0.45 },
     kicker: { text: '{location} · {year}', font: { glyph: 'oswald', family: 'sans-serif', size: 24, letterSpacing: 8, uppercase: true, color: 'textMuted' } },

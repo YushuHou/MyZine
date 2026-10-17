@@ -25,7 +25,12 @@ module.exports = {
     body: { family: 'serif', weight: 'normal', size: 32, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 24, lineHeight: 1.5, color: 'textMuted', letterSpacing: 2 }
   },
-  wordPool: ['Admit One', 'Round Trip', 'Next Stop', 'Platform 7', 'Window Seat', 'One Way', 'Boarding Pass'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Admit One', 'Round Trip', 'Next Stop', 'Platform 7', 'Window Seat', 'One Way', 'Boarding Pass',
+    'All Aboard', 'Next Train', 'Return Ticket', 'Gate 12', 'Departures', 'Arrivals', 'Express', 'Seat 14A',
+    'Last Stop', 'Transfer', 'Destination', 'Night Train', 'Ticket Please', 'Final Call'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'oswald', family: 'sans-serif', size: 110, uppercase: true, color: 'text' }, minScale: 0.5 },
     kicker: { text: '{location} · {date}', font: { glyph: 'oswald', family: 'sans-serif', size: 24, letterSpacing: 4, uppercase: true, color: 'accent' } }
@@ -45,5 +50,18 @@ module.exports = {
     // 每页最大的照片压一个邮戳（环内写地点、日期）
     { type: 'postmark', largestOnly: true, minWidth: 360, r: 86, position: 'top-left', color: 'postmark', font: { glyph: 'oswald', family: 'sans-serif', letterSpacing: 1.5, uppercase: true } }
   ],
-  decorations: []
+  decorations: [],
+  // 装饰计划（阶段 7c）：大装饰为城市天际线或顶边斜条；小装饰为一组叠压的护照章 + 方印
+  ornaments: {
+    big: [
+      { type: 'scenery', kinds: ['skyline'], layers: [2, 2], color: 'text', mix: [0.82, 0.72, 0.62], desaturate: 0.3, height: [0.12, 0.2], weight: 2 },
+      { type: 'patternBand', name: 'stripes', edges: ['top'], width: 30, color: 'text', alpha: 0.55, cell: 30, angle: 45, fill: 'paper', weight: 1 }
+    ],
+    small: [
+      { type: 'passport', size: [180, 210], count: [2, 3], colors: ['blue', 'accent', '#4F6B4A'], weight: 2 },
+      { type: 'seal', size: [120, 150], weight: 1 }
+    ],
+    smallPerSpread: [2, 2],
+    pageTypes: ['body']
+  }
 }

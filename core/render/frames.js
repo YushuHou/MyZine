@@ -7,6 +7,12 @@ function hashRandom(str) {
     h ^= str.charCodeAt(i)
     h = Math.imul(h, 16777619)
   }
+  // 末尾雪崩混合（murmur3 fmix32）：否则只差最后一个字符的 key（如 type:0 / type:1）得到的值几乎一样
+  h ^= h >>> 16
+  h = Math.imul(h, 0x85EBCA6B)
+  h ^= h >>> 13
+  h = Math.imul(h, 0xC2B2AE35)
+  h ^= h >>> 16
   return (h >>> 0) / 4294967296
 }
 

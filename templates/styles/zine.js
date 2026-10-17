@@ -23,7 +23,12 @@ module.exports = {
     body: { family: 'sans-serif', weight: 'normal', size: 32, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 24, lineHeight: 1.5, color: 'textMuted', letterSpacing: 2 }
   },
-  wordPool: ['Lost & Found', 'Out of Town', 'No Plans', 'Weekend Club', 'Night Shift', 'Cheap Thrills', 'Side Streets', 'Off Grid'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Lost & Found', 'Out of Town', 'No Plans', 'Weekend Club', 'Night Shift', 'Cheap Thrills',
+    'Side Streets', 'Off Grid', 'DIY', 'Zine Scene', 'Loud & Clear', 'Weird & Wonderful', 'Free Spirit',
+    'Out Loud', 'Xerox Club', 'Back Pages', 'Paper Cuts', 'Side B', 'Fringe', 'Wild Card', 'Street Level'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'oswald', family: 'sans-serif', size: 130, uppercase: true, color: 'accent' }, minScale: 0.45 },
     kicker: { text: '{location} / {year}', font: { glyph: 'oswald', family: 'sans-serif', size: 26, letterSpacing: 4, uppercase: true, color: 'blue' } },

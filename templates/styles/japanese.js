@@ -22,7 +22,13 @@ module.exports = {
     body: { family: 'sans-serif', weight: 'normal', size: 30, lineHeight: 1.8, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 24, lineHeight: 1.6, color: 'textMuted', letterSpacing: 2 }
   },
-  wordPool: ['a little breeze', 'slow days', 'sunny side', 'just today', 'soft light', 'here and now', 'little walks'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'a little breeze', 'slow days', 'sunny side', 'just today', 'soft light', 'here and now', 'little walks',
+    'quiet morning', 'tiny moments', 'gentle days', 'cloud watching', 'after the rain', 'fresh air',
+    'sweet nothing', 'a cup of tea', 'window light', 'slow walk', 'soft breeze', 'little garden',
+    'summer air', 'simple joys'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'caveat', family: 'serif', size: 90, color: 'accent' }, minScale: 0.5 },
     kicker: { text: '{month} {year}', font: { glyph: 'caveat', family: 'serif', size: 40, color: 'textMuted' } },

@@ -79,6 +79,17 @@ function darkStyleOf(style) {
   return darkCache[style.id]
 }
 
+// 版式中是否有显示装饰词（{word}）的文字槽
+function layoutShowsWord(layout, style) {
+  const defs = style.decoText || {}
+  return (layout.pages || []).some(p => (p.slots || []).some(slot => {
+    const def = defs[slot.type]
+    if (!def) return false
+    const texts = def.lines ? def.lines.map(l => l.text) : [def.text]
+    return texts.some(t => t && t.indexOf('{word}') >= 0)
+  }))
+}
+
 function getSpreadStyle(album, spread) {
   const style = getStyle(spread.styleId || album.defaultStyleId)
   return spread.inverted && style.darkVariant ? darkStyleOf(style) : style
@@ -105,22 +116,33 @@ function pageLabel(pageType, side) {
  * label：封面 / 环衬 / 扉页 / P1… / 封底，正文按正文页单独编号，跨页大图算两页
  * pageNumbers：正文页印在页面上的页码，单页 [3]，跨页大图 [3, 4]；非正文页为 []
  * frameNumbers：正文照片编号 { frameId: n }，整本书连续（有照片的框才编号）
- * word：跨页的装饰词（来自风格 wordPool，按跨页 id 稳定选取，相邻跨页不重复）
+ * word：跨页的装饰词（来自风格 wordPool）。只有版式里真有 {word} 文字槽的跨页才占用一个词；
+ *   整本书不重复（每个风格各自记录），词池用完后重新开始，且不和上一个相同
  */
 function getPageList(album) {
   const pages = []
   let bodyNo = 0
   let photoNo = 0
+  // 每个风格已用的词、上一个词
+  const usedWords = {}
   let lastWord = ''
   album.spreads.forEach(spread => {
     const layout = getLayout(spread.layoutId)
-    // 装饰词：按 id 选，和上一个跨页相同就顺延一个
-    const pool = getSpreadStyle(album, spread).wordPool || []
+    const style = getSpreadStyle(album, spread)
+    const pool = style.wordPool || []
     let word = ''
-    if (pool.length && spread.pageType === 'body') {
-      let i = Math.floor(hashRandom(`word:${spread.id}`) * pool.length)
-      if (pool[i] === lastWord && pool.length > 1) i = (i + 1) % pool.length
-      word = pool[i]
+    if (pool.length && spread.pageType === 'body' && layoutShowsWord(layout, style)) {
+      const poolKey = style.id.split(':')[0]
+      let used = usedWords[poolKey] || (usedWords[poolKey] = {})
+      let free = pool.filter(w => !used[w])
+      if (!free.length) {
+        // 词池用完：重新开始（避开上一个词）
+        used = usedWords[poolKey] = {}
+        free = pool.filter(w => w !== lastWord)
+        if (!free.length) free = pool
+      }
+      word = free[Math.floor(hashRandom(`word:${spread.id}`) * free.length)]
+      used[word] = true
       lastWord = word
     }
     const sides = layout.span === 'pair' ? ['left', 'right'] : layout.span === 'spread' ? ['full'] : ['single']

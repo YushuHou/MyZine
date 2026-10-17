@@ -24,7 +24,13 @@ module.exports = {
     body: { family: 'serif', weight: 'normal', size: 32, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 24, lineHeight: 1.5, color: 'textMuted', letterSpacing: 2 }
   },
-  wordPool: ['Into the Wild', 'Fresh Air', 'Mountains Calling', 'Trail Notes', 'Wild & Free', 'Green Days', 'Under the Sky'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Into the Wild', 'Fresh Air', 'Mountains Calling', 'Trail Notes', 'Wild & Free', 'Green Days',
+    'Under the Sky', 'Wild Places', 'Take a Hike', 'Forest Bathing', 'Summit Day', 'River Song',
+    'Pine & Stone', 'Open Sky', 'Valley Light', 'Into the Woods', 'Morning Mist', 'Wildflowers',
+    'High Country', 'Earth & Sky', 'Leave No Trace'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'playfair', family: 'serif', size: 108, color: 'text' }, minScale: 0.5 },
     kicker: { text: '{location} · {month} {year}', font: { glyph: 'playfair', family: 'serif', size: 24, letterSpacing: 4, uppercase: true, color: 'accent' } },
@@ -47,7 +53,7 @@ module.exports = {
   },
   frameDecorations: [
     // 压花标本角：每页最大的照片左上角压一枝枝叶
-    { type: 'cornerDoodle', largestOnly: true, minWidth: 320, names: ['branch'], corner: 'top-left', size: 150, color: 'leaf', lineWidth: 4 }
+    { type: 'cornerDoodle', largestOnly: true, minWidth: 320, names: ['branch', 'flower'], corner: 'top-left', size: 150, color: 'leaf', lineWidth: 4 }
   ],
   doodles: {
     names: ['mountain', 'pine', 'branch', 'sun', 'cloud'],
@@ -59,6 +65,19 @@ module.exports = {
     pageTypes: ['body']
   },
   decorations: [],
+  // 装饰计划（阶段 7c）：大装饰为山脉、树林、丘陵剪影（2–3 层）；小装饰为线稿、护照章（像国家公园章）、方印
+  ornaments: {
+    big: [
+      { type: 'scenery', kinds: ['mountains', 'forest', 'hills'], layers: [2, 3], color: 'accent', mix: [0.8, 0.66, 0.52], desaturate: 0.35, height: [0.14, 0.26] }
+    ],
+    small: [
+      { type: 'doodle', weight: 3 },
+      { type: 'passport', size: [170, 200], count: [1, 1], colors: ['accent', '#7A6A4F'], weight: 1 },
+      { type: 'seal', size: [120, 150], weight: 1 }
+    ],
+    smallPerSpread: [2, 3],
+    pageTypes: ['body']
+  },
   // 偏好拱形、满版、留白
   layoutWeights: {
     'b-AR-L1B': 4,

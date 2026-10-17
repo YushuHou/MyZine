@@ -41,7 +41,12 @@ core/                               逻辑层（不依赖页面）
     decoText.js     装饰文字：文字槽（大标题 / 副标题 / 问候语 / 路牌）、页眉、照片编号
     glyphText.js    字形路径文字（西文）+ 系统字体（中文），同一行基线对齐
     svgPath.js      SVG 路径解析（M/L/H/V/C/S/Q/T/A/Z）
-    doodles.js      线稿绘制与自动摆放
+    doodles.js      线稿绘制
+    ornaments.js    跨页装饰计划：1 个大装饰 + 2–3 个小装饰，同一跨页线稿不重复；小装饰的摆放
+    scenery.js      程序生成的场景剪影：山脉、树林、海浪、城市天际线、丘陵
+    seals.js        中式红色方印（地名竖排）、护照入境章
+    patterns.js     几何纹样：青海波、回纹、麻叶、七宝、波点、条纹、方格纸、点阵、横线信纸
+    color.js        颜色解析、混色、降饱和
     textures.js     代码生成的纹理：颗粒、纸张、牛皮纸、报纸
     paperCraft.js   照片滤镜、票根、撕边垫纸、霓虹描边、半调网点
     postcard.js     邮票、邮戳（沿圆弧写字）、航空信封斜条
@@ -68,8 +73,8 @@ getPageList(album)            每页：spreadId、side（left / right / full / s
    ↓
 loadRenderImages(loader, …)   照片（display / original / thumb）+ 代码纹理 + 字形字体
    ↓
-renderPage / renderSpread     背景 → 色块 → 装饰 → 照片框（垫纸 → 底板 → 照片 → 滤镜 → 票根）
-                              → 胶带 / 邮票等 → 文字块 → 装饰文字 → 线稿 → 页码 → 颗粒
+renderPage / renderSpread     背景（+ 纹样）→ 大装饰 → 色块 → 装饰 → 照片框（垫纸 → 底板 → 照片 → 滤镜 → 票根）
+                              → 胶带 / 邮票等 → 文字块 → 装饰文字 → 小装饰（线稿 / 方印 / 护照章）→ 页码 → 颗粒
    ↓
 编辑页画布 / 跨页缩略图 / 翻书预览 / 导出（离屏画布 → JPG → PDF 或相册）
 ```
@@ -87,14 +92,15 @@ renderPage / renderSpread     背景 → 色块 → 装饰 → 照片框（垫�
 | `description` / `tags` | 模板页说明；适合主题（`templates/themes.js` 的 key） |
 | `colors` | 配色。必需：`background` `text` `textMuted` `accent` `endpaper` `placeholder` `fitFill`；可加自定义键，其他字段用键名引用 |
 | `fonts` | 封面 / 扉页文字块的角色字体：`title` `subtitle` `body` `caption`（系统字体） |
-| `background` | `{ type: 'color' }` / `{ type: 'texture', texture: 'paper' \| 'kraft' \| 'newsprint' }` |
+| `background` | `{ type: 'color' }` / `{ type: 'texture', texture: 'paper' \| 'kraft' \| 'newsprint' }`；可加 `pattern: { name, color, alpha, cell }` 整页低对比度纹样 |
 | `grain` / `pagePalette` | 颗粒感；底色在跨页间轮换（左右页可不同） |
 | `photoFrame` | `borderWidth` `borderColor` `bottomExtra`（拍立得）`shadow` `rotateJitter` `backing`（撕边垫纸）`ticketStub`（票根） |
 | `photoFilter` | `[{ type: 'grayscale' }, { type: 'tint', color, mode, alpha }, { type: 'lightLeak' }]` |
 | `frameDecorations` | `tape` `stamp` `postmark` `dateStamp` `outline` `plateRim` `cornerDoodle`；`largestOnly`、`layer: 'frame'` |
-| `decorations` | `rect` `line` `text` `perforation` `gutterLine` `halftone` `airmailBorder` `checkerBorder` `fenceBorder` `route`；`chance`、`mirror`、`pageTypes` |
-| `doodles` | 线稿摆放：`names` `perSpread` `size` `colors` `lineWidth` `rotate` `avoid` |
-| `wordPool` / `decoText` | 装饰词池；`headline` `kicker` `greeting` `runningHeader` `index` 的内容和字体（`glyph: 'playfair' \| 'caveat' \| 'oswald'` 用字形路径）；`plate` 底牌、`dy` 下移 |
+| `decorations` | `rect` `line` `text` `perforation` `gutterLine` `halftone` `airmailBorder` `checkerBorder` `fenceBorder` `route` `patternBand`（纹样页边条）`patternBlock`（纹样色块）；`rect` 可加 `pattern`；`chance`、`mirror`、`pageTypes` |
+| `doodles` | 线稿：`names` `perSpread`（没有 `ornaments` 时的数量）`size` `colors` `lineWidth` `rotate` `avoid`。同一跨页不重复 |
+| `ornaments` | 跨页装饰计划（见 `core/render/ornaments.js` 文件头）：`big` 大装饰候选（`scenery` 剪影 / `pagePattern` 整页底纹 / `patternBand` / `patternBlock` / `deco` 任意页面装饰，带 `weight`，放不下自动换下一个）；`small` 小装饰类型（`doodle` / `seal` 方印 / `passport` 护照章）；`smallPerSpread`；`pageTypes` |
+| `wordPool` / `decoText` | 装饰词池（建议 20 个以上：整本书不重复，用完才重来）；`headline` `kicker` `greeting` `runningHeader` `index` 的内容和字体（`glyph: 'playfair' \| 'caveat' \| 'oswald'` 用字形路径）；`plate` 底牌、`dy` 下移 |
 | `pageNumber` | `{ show, glyph, size, color, format: 'pad2' }` |
 | `layoutWeights` | 偏好版式：`{ 版式 id: 倍数 }`，≥ 2 时方框按完全匹配计分 |
 | `darkVariant` | 反色跨页的深色配置（约每 5 个正文跨页一次） |
@@ -160,3 +166,4 @@ renderPage / renderSpread     背景 → 色块 → 装饰 → 照片框（垫�
 - 相册只在内存中，关闭小程序后不会保留（编辑页首次进入时会提示，导出页常驻提示）。
 - 只支持 3:4 页面；不支持印刷出血（3mm）和 CMYK。
 - 满版出血照片冲印裁切时边缘可能有细白边。
+- 中式方印只刻地名里的汉字；地名含英文字母（如 Kyoto）或为空时不画方印。汉字用系统衬线粗体，没有篆书字体。

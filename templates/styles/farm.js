@@ -25,7 +25,12 @@ module.exports = {
     body: { family: 'sans-serif', weight: 'normal', size: 32, lineHeight: 1.7, color: 'text' },
     caption: { family: 'sans-serif', weight: 'normal', size: 24, lineHeight: 1.5, color: 'textMuted', letterSpacing: 2 }
   },
-  wordPool: ['Hello Friends', 'Farm Days', 'Little Buddies', 'Happy Tails', 'Sunny Barn', 'Moo & Baa', 'Best Friends'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Hello Friends', 'Farm Days', 'Little Buddies', 'Happy Tails', 'Sunny Barn', 'Moo & Baa', 'Best Friends',
+    'Moo!', 'Oink Oink', 'Cluck Cluck', 'Barn Buddies', 'Muddy Boots', 'Fresh Hay', 'Happy Farm',
+    'Little Paws', 'Feeding Time', 'Meadow Days', 'Hello Piggy', 'Woolly Friends', 'Quack!', 'Tiny Hooves'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'caveat', family: 'serif', size: 120, color: 'accent' }, minScale: 0.5 },
     kicker: { text: '{month} {year}', font: { glyph: 'caveat', family: 'serif', size: 44, color: 'grass' } }

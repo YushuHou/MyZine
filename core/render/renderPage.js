@@ -6,9 +6,9 @@ const { drawTextBlock } = require('./text')
 const { getLayoutPage } = require('../registry')
 const { resolveFrames, photoRect, borderOf, stubSide, outerRect, cornerRadius, shapePath } = require('./frames')
 const { applyPhotoFilters, drawTornBacking, drawTicketStub } = require('./paperCraft')
-const { drawBackground, pageColorOf, drawBlocks, drawGrain, drawDecorations, drawFrameDecorations, drawDateStamp } = require('./decorations')
+const { drawBackground, pageColorOf, pageBaseColor, drawBlocks, drawGrain, drawDecorations, drawFrameDecorations, drawDateStamp } = require('./decorations')
 const { drawSlots, drawRunningHeader, drawPhotoIndex } = require('./decoText')
-const { drawPageDoodles } = require('./doodles')
+const { planOrnaments, drawBigOrnament, drawSmallOrnaments } = require('./ornaments')
 const { drawGlyphText, measureGlyphText } = require('./glyphText')
 
 // 编辑时选中照片框的高亮色（界面元素，不属于风格）
@@ -50,20 +50,26 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
     ctx.fillStyle = style.colors[layoutPage.fill] || layoutPage.fill
     ctx.fillRect(0, 0, W, H)
   }
-  drawBlocks(ctx, style, layoutPage, W, H)
-  drawDecorations(ctx, style, page, W, H, unit, images)
+  // 跨页装饰计划：1 个大装饰（照片之下）+ 若干小装饰（最后画），线稿不重复
+  const bg = pageBaseColor(style, page, layoutPage)
+  const plan = planOrnaments(style, page, layout)
+  const bigAreas = drawBigOrnament(ctx, style, page, layout, plan, W, H, unit, images, bg)
+  drawBlocks(ctx, style, layoutPage, W, H, unit)
+  drawDecorations(ctx, style, page, W, H, unit, images, bg)
+  // 照片上的邮票、照片角线稿用计划分好的线稿名
+  const names = { stamp: plan.names.stamp[page.side], corner: plan.names.corner[page.side] }
   const largest = frames.filter(f => f.framed).reduce((best, f) => (!best || f.w * f.h > best.w * best.h ? f : best), null)
   frames.forEach(frame => {
     drawFrame(ctx, frame, page.slots[frame.id], style, images, W, H, unit, page)
     // layer: 'frame' 的装饰（如霓虹描边）跟着这张照片画，后面叠上来的照片能盖住它
     withFrameTransform(ctx, frame, W, H, rect => {
-      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, layer: 'frame' })
+      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, layer: 'frame', names })
     })
   })
   // 胶带、邮票等照片框装饰在所有照片之后画，可以压住相邻照片
   frames.forEach(frame => {
     withFrameTransform(ctx, frame, W, H, rect => {
-      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest })
+      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, names })
     })
   })
   ;(layoutPage.texts || []).forEach(block => {
@@ -73,8 +79,8 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   const textAreas = drawSlots(ctx, style, page, layoutPage, W, H, unit)
     .concat(drawRunningHeader(ctx, style, page, frames, W, H, unit))
   drawPhotoIndex(ctx, style, page, frames, W, H, unit)
-  // 线稿放在装饰位，避开照片和文字
-  drawPageDoodles(ctx, style, page, frames, W, H, unit, textAreas)
+  // 小装饰（线稿、方印、护照章）放在装饰位，避开照片、文字和大装饰
+  drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, textAreas.concat(bigAreas), bg)
   drawPageNumbers(ctx, page, layoutPage, style, W, H, unit)
   // 颗粒覆盖整页（含照片），最后画；参考线和选中框不受影响
   drawGrain(ctx, style, W, H, unit, images)

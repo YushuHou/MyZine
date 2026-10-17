@@ -22,7 +22,13 @@ module.exports = {
     body: { family: 'serif', weight: 'normal', size: 32, lineHeight: 1.7, color: 'text' },
     caption: { family: 'serif', weight: 'normal', size: 24, lineHeight: 1.5, color: 'textMuted', letterSpacing: 1 }
   },
-  wordPool: ['Extra! Extra!', 'Headlines', 'The Daily Wander', 'Cut & Paste', 'Clippings', 'Front Page', 'Late Edition'],
+  // 装饰词池：整本书不重复（有标题槽的跨页才用掉一个），用完后重新开始
+  wordPool: [
+    'Extra! Extra!', 'Headlines', 'The Daily Wander', 'Cut & Paste', 'Clippings', 'Front Page',
+    'Late Edition', 'Breaking News', 'Special Issue', 'Weekend Edition', 'Hot Off the Press', 'Cut Out',
+    'Scrapbook', 'Collected', 'Stop the Press', 'The Gazette', 'Snippets', 'Paper Trail',
+    'Read All About It', 'Bits & Pieces', 'Front Row'
+  ],
   decoText: {
     headline: { text: '{word}', font: { glyph: 'playfair', family: 'serif', size: 112, color: 'text' }, minScale: 0.5 },
     kicker: { text: '{location} · {date}', font: { glyph: 'oswald', family: 'sans-serif', size: 24, letterSpacing: 4, uppercase: true, color: 'accent' } },
