@@ -23,8 +23,8 @@
   "window": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "MyZine",
-    "navigationBarBackgroundColor": "#F6F4EF",
-    "backgroundColor": "#F6F4EF"
+    "navigationBarBackgroundColor": "#EBEBE8",
+    "backgroundColor": "#EBEBE8"
   },
   "style": "v2",
   "componentFramework": "glass-easel",

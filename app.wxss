@@ -1,27 +1,73 @@
 /** app.wxss 全局样式 **/
+/* 界面配色「暗房灰卡」：各页面只引用这里的变量，不写死颜色值（照片书模板的配色在 templates/ 中，与此无关）
+   画布上画的界面元素（选中框、缩略图空白）不能用 CSS 变量，取值见 core/uiColors.js，改配色时两处一起改 */
 page {
-  background: #F6F4EF;
-  color: #2B2B2B;
+  /* 底色 */
+  --color-bg: #EBEBE8;
+  --color-surface: #F6F6F4;
+  --color-placeholder: #DCDCD8;
+  /* 「桌面」：书页缩略图下面的深灰底，浅色书页（纸白等）也能看清边界 */
+  --color-desk: #CDCDC8;
+  --shadow-book: 0 6rpx 20rpx rgba(30, 31, 34, 0.28);
+  /* 文字 */
+  --color-text: #1E1F22;
+  --color-text-2: #6B6E73;
+  --color-text-3: rgba(107, 110, 115, 0.55);
+  --color-line: rgba(107, 110, 115, 0.22);
+  /* 品牌主色：靛蓝 */
+  --color-brand: #2C3E66;
+  --color-on-brand: #FFFFFF;
+  /* 高亮：柯达黄（页码标签、选中、当前页） */
+  --color-accent: #F5B800;
+  --color-on-accent: #1B1B1B;
+  /* 遮罩、压在照片上的小标签 */
+  --color-mask: rgba(30, 31, 34, 0.45);
+  --color-scrim: rgba(30, 31, 34, 0.6);
+  --color-on-scrim: #FFFFFF;
+  --color-shadow: rgba(30, 31, 34, 0.18);
+  /* 翻书预览的暗色舞台 */
+  --color-stage: #1E1F22;
+  --color-on-stage: rgba(246, 246, 244, 0.85);
+  --color-on-stage-2: rgba(246, 246, 244, 0.5);
+  /* 翻书预览：书页靠书脊一侧的阴影 */
+  --shade-strong: rgba(0, 0, 0, 0.18);
+  --shade-soft: rgba(0, 0, 0, 0.12);
+  --shade-none: rgba(0, 0, 0, 0);
+  /* 圆角 */
+  --radius-btn: 6rpx;
+  --radius-card: 12rpx;
+
+  background: var(--color-bg);
+  color: var(--color-text);
   font-size: 28rpx;
 }
 
-/* 主按钮 */
+/* 所有按钮：去掉胶囊圆角和原生描边 */
+button {
+  border-radius: var(--radius-btn) !important;
+}
+button::after {
+  border: none !important;
+}
+
+/* 主按钮：靛蓝实心白字 */
 .btn-primary {
-  background: #2B2B2B !important;
-  color: #FFFFFF !important;
-  border-radius: 999rpx !important;
+  background: var(--color-brand) !important;
+  color: var(--color-on-brand) !important;
   font-size: 30rpx !important;
 }
 .btn-primary[disabled] {
-  background: #C9C1B3 !important;
-  color: #FFFFFF !important;
+  opacity: 0.35;
 }
 
-/* 次按钮 */
+/* 次按钮：深色描边、透明底 */
 .btn-secondary {
-  background: #FFFFFF !important;
-  color: #B5835A !important;
-  border: 2rpx solid #B5835A !important;
-  border-radius: 999rpx !important;
+  background: transparent !important;
+  color: var(--color-text) !important;
+  border: 2rpx solid var(--color-text) !important;
   font-size: 30rpx !important;
+  box-sizing: border-box;
+}
+.btn-secondary[disabled] {
+  opacity: 0.35;
 }

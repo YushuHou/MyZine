@@ -1,7 +1,7 @@
 /** 立体翻书预览 **/
 page {
   height: 100%;
-  background: #3A3835;
+  background: var(--color-stage);
 }
 .page {
   height: 100%;
@@ -14,7 +14,7 @@ page {
 .book {
   position: relative;
   perspective: 2200px;
-  box-shadow: 0 10rpx 48rpx rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10rpx 48rpx var(--color-mask);
 }
 
 /* 左右半页：显示跨页图的一半（图片宽 200%，右半时左移 100%） */
@@ -53,7 +53,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-on-stage-2);
   font-size: 26rpx;
 }
 
@@ -105,11 +105,11 @@ page {
 }
 .shade-next-front,
 .shade-prev-back {
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 30%);
+  background: linear-gradient(to right, var(--shade-strong), var(--shade-none) 30%);
 }
 .shade-next-back,
 .shade-prev-front {
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 30%);
+  background: linear-gradient(to left, var(--shade-strong), var(--shade-none) 30%);
 }
 
 /* 书脊：中线一道浅阴影 */
@@ -122,16 +122,21 @@ page {
   margin-left: -3%;
   z-index: 6;
   pointer-events: none;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.12) 50%, rgba(0, 0, 0, 0));
+  background: linear-gradient(to right, var(--shade-none), var(--shade-soft) 50%, var(--shade-none));
 }
 
+/* 当前页指示：柯达黄标签 */
 .label {
   margin-top: 32rpx;
+  padding: 6rpx 20rpx;
   font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  border-radius: var(--radius-btn);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 .counter {
   margin-top: 16rpx;
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-on-stage-2);
 }

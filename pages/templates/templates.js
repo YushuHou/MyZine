@@ -9,6 +9,7 @@ const { createSpread, createSlot } = require('../../core/album')
 const { buildBook } = require('../../core/book')
 const { createSpreadImageRenderer } = require('../../core/render/spreadImages')
 const THEMES = require('../../templates/themes')
+const UI_COLORS = require('../../core/uiColors')
 
 // 示例跨页的版式：左页标题 + 小图、右页大横图，能看到大标题、页眉、线稿、边框等风格特征
 const SAMPLE_LAYOUT = 'b-H1L-L1'
@@ -56,7 +57,7 @@ Page({
     this.renderer = createSpreadImageRenderer({
       width: Math.min((info.windowWidth - 32) * (info.pixelRatio || 2), 1200),
       variant: 'display',
-      blankColor: '#FFFFFF',
+      blankColor: UI_COLORS.desk,
       spine: true
     })
     this.sample = this.sampleSpread()

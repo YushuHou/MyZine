@@ -11,9 +11,9 @@
 
   <view class="toolbar">
     <view class="pager">
-      <button class="nav" size="mini" disabled="{{current <= 0}}" bindtap="onPrev">上一页</button>
+      <button class="nav btn-secondary" size="mini" disabled="{{current <= 0}}" bindtap="onPrev">上一页</button>
       <view class="pager-text">{{label}}</view>
-      <button class="nav" size="mini" disabled="{{current >= total - 1}}" bindtap="onNext">下一页</button>
+      <button class="nav btn-secondary" size="mini" disabled="{{current >= total - 1}}" bindtap="onNext">下一页</button>
       <view class="guide-toggle {{guides ? 'on' : ''}}" bindtap="onToggleGuides">参考线</view>
     </view>
 

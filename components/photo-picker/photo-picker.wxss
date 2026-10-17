@@ -13,7 +13,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-mask);
 }
 .sheet {
   position: absolute;
@@ -23,8 +23,8 @@
   height: 70vh;
   display: flex;
   flex-direction: column;
-  background: #F6F4EF;
-  border-radius: 24rpx 24rpx 0 0;
+  background: var(--color-bg);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -40,14 +40,15 @@
 }
 .tab {
   padding: 10rpx 28rpx;
-  border-radius: 999rpx;
+  border-radius: var(--radius-btn);
   font-size: 28rpx;
-  color: #8A847A;
-  background: #FFFFFF;
+  color: var(--color-text-2);
+  border: 2rpx solid var(--color-line);
 }
 .tab.active {
-  color: #FFFFFF;
-  background: #2B2B2B;
+  color: var(--color-on-brand);
+  background: var(--color-brand);
+  border-color: var(--color-brand);
 }
 .close {
   width: 64rpx;
@@ -55,7 +56,7 @@
   line-height: 60rpx;
   text-align: center;
   font-size: 48rpx;
-  color: #8A847A;
+  color: var(--color-text-2);
 }
 
 .body {
@@ -65,7 +66,7 @@
 .empty {
   padding: 80rpx 0;
   text-align: center;
-  color: #8A847A;
+  color: var(--color-text-2);
 }
 .grid {
   display: grid;
@@ -76,9 +77,9 @@
 .cell {
   position: relative;
   padding-top: 100%;
-  border-radius: 12rpx;
+  border-radius: var(--radius-btn);
   overflow: hidden;
-  background: #E6E1D8;
+  background: var(--color-placeholder);
   box-sizing: border-box;
 }
 .thumb {
@@ -96,8 +97,8 @@
   top: 0;
   right: 0;
   bottom: 0;
-  border: 6rpx solid #2F80ED;
-  border-radius: 12rpx;
+  border: 6rpx solid var(--color-accent);
+  border-radius: var(--radius-btn);
 }
 .tags {
   position: absolute;
@@ -105,9 +106,9 @@
   top: 8rpx;
   max-width: calc(100% - 16rpx);
   padding: 0 10rpx;
-  border-radius: 8rpx;
-  background: rgba(0, 0, 0, 0.55);
-  color: #FFFFFF;
+  border-radius: 4rpx;
+  background: var(--color-scrim);
+  color: var(--color-on-scrim);
   font-size: 20rpx;
   line-height: 34rpx;
   white-space: nowrap;

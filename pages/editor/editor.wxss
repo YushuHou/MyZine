@@ -16,7 +16,7 @@ page {
   padding: 16px 0 0;
 }
 .page-canvas {
-  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-book);
 }
 
 .toolbar {
@@ -31,10 +31,17 @@ page {
 }
 .nav {
   margin: 0 !important;
+  font-size: 26rpx !important;
 }
+/* 当前页标签：柯达黄 */
 .pager-text {
-  min-width: 200rpx;
+  min-width: 160rpx;
+  padding: 6rpx 20rpx;
   text-align: center;
+  font-weight: 600;
+  border-radius: var(--radius-btn);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 /* 固定高度：切换操作栏时画布位置不变 */
@@ -52,15 +59,15 @@ page {
   top: 50%;
   transform: translateY(-50%);
   padding: 6rpx 16rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-btn);
   font-size: 22rpx;
-  color: #8A847A;
-  border: 1rpx solid #C9C1B3;
+  color: var(--color-text-2);
+  border: 2rpx solid var(--color-text-3);
 }
 .guide-toggle.on {
-  color: #FFFFFF;
-  background: #2F80ED;
-  border-color: #2F80ED;
+  color: var(--color-on-brand);
+  background: var(--color-brand);
+  border-color: var(--color-brand);
 }
 
 /* 照片框操作按钮 */
@@ -70,21 +77,24 @@ page {
   line-height: 76rpx;
   text-align: center;
   font-size: 28rpx;
-  border-radius: 999rpx;
-  background: #FFFFFF;
-  color: #2B2B2B;
+  border-radius: var(--radius-btn);
+  border: 2rpx solid var(--color-text);
+  box-sizing: border-box;
+  color: var(--color-text);
 }
 .tool.disabled {
-  color: #C9C1B3;
+  color: var(--color-text-3);
+  border-color: var(--color-text-3);
 }
 .tool-primary {
-  background: #2B2B2B;
-  color: #FFFFFF;
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: var(--color-on-brand);
 }
 .hint {
   flex: 2;
   font-size: 26rpx;
-  color: #8A847A;
+  color: var(--color-text-2);
 }
 
 /* 「相册不会保存」提示条：浮在页面顶部，不影响画布位置 */
@@ -99,10 +109,10 @@ page {
   padding: 20rpx 24rpx;
   font-size: 26rpx;
   line-height: 1.5;
-  color: #FFFFFF;
-  background: rgba(43, 43, 43, 0.92);
-  border-radius: 16rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+  color: var(--color-surface);
+  background: var(--color-text);
+  border-radius: var(--radius-card);
+  box-shadow: 0 8rpx 24rpx var(--color-shadow);
 }
 .save-notice-text {
   flex: 1;
@@ -111,5 +121,6 @@ page {
   margin-left: 16rpx;
   font-size: 32rpx;
   line-height: 1.2;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-surface);
+  opacity: 0.7;
 }

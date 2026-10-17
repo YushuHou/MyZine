@@ -5,6 +5,7 @@ const { getLayout, getLayoutFrames, listLayouts, getStyle } = require('../../cor
 const { splitSpreads, insertBodySpread, removeBodySpread, setBodyOrder, changeSpreadLayout } = require('../../core/spreads')
 const { getThumbRenderer } = require('../../core/render/spreadImages')
 const { createGrid, moveItem } = require('../../core/ui/sortable')
+const UI_COLORS = require('../../core/uiColors')
 
 // 列表：左右边距 32rpx，行高 200rpx，行间距 16rpx
 const PAGE_PADDING_RPX = 32
@@ -177,7 +178,7 @@ Page({
       title: '删除跨页',
       content: '删除后，其中的照片仍保留在照片库中',
       confirmText: '删除',
-      confirmColor: '#D9534F',
+      confirmColor: UI_COLORS.danger,
       success: res => {
         if (!res.confirm) return
         removeBodySpread(this.album, id)

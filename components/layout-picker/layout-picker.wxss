@@ -13,7 +13,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-mask);
 }
 .sheet {
   position: absolute;
@@ -23,8 +23,8 @@
   height: 78vh;
   display: flex;
   flex-direction: column;
-  background: #F6F4EF;
-  border-radius: 24rpx 24rpx 0 0;
+  background: var(--color-bg);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   padding-bottom: env(safe-area-inset-bottom);
 }
 .header {
@@ -43,7 +43,7 @@
   line-height: 60rpx;
   text-align: center;
   font-size: 48rpx;
-  color: #8A847A;
+  color: var(--color-text-2);
 }
 .body {
   flex: 1;
@@ -55,7 +55,7 @@
 .group-title {
   margin: 8rpx 0 16rpx;
   font-size: 26rpx;
-  color: #8A847A;
+  color: var(--color-text-2);
 }
 .grid {
   display: grid;
@@ -64,12 +64,13 @@
 }
 .card {
   padding: 16rpx;
-  background: #FFFFFF;
-  border-radius: 16rpx;
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
   border: 4rpx solid transparent;
 }
+/* 当前版式：柯达黄边框 */
 .card.current {
-  border-color: #2F80ED;
+  border-color: var(--color-accent);
 }
 
 /* 示意图：外框 3:2，两页各 3:4 */
@@ -84,11 +85,11 @@
   top: 0;
   width: 50%;
   height: 100%;
-  background: #F2EEE6;
+  background: var(--color-bg);
 }
 .page:first-child {
   left: 0;
-  box-shadow: inset -2rpx 0 0 #DDD6CA;
+  box-shadow: inset -2rpx 0 0 var(--color-line);
 }
 .page:last-child {
   right: 0;
@@ -100,13 +101,13 @@
 }
 .frame {
   position: absolute;
-  background: #B9B2A6;
+  background: var(--color-text-3);
 }
 .name {
   margin-top: 12rpx;
   font-size: 24rpx;
   text-align: center;
-  color: #2B2B2B;
+  color: var(--color-text);
 }
 
 /* 照片形状 */

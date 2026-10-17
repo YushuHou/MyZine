@@ -6,7 +6,7 @@ const { getSpreadLabels } = require('../../core/album')
 const { createSpreadImageRenderer } = require('../../core/render/spreadImages')
 
 // 页面背景色，同时用于封面左侧、封底右侧的空白半边
-const BG_COLOR = '#3A3835'
+const BG_COLOR = require('../../core/uiColors').stage
 // 预览图最大宽度（px），避免高像素比设备上生成过大的图片
 const MAX_IMAGE_WIDTH = 1800
 // 翻过多少度松手就算翻过去

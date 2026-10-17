@@ -11,8 +11,8 @@ const { drawSlots, drawRunningHeader, drawPhotoIndex } = require('./decoText')
 const { planOrnaments, drawBigOrnament, drawSmallOrnaments } = require('./ornaments')
 const { drawGlyphText, measureGlyphText } = require('./glyphText')
 
-// 编辑时选中照片框的高亮色（界面元素，不属于风格）
-const SELECTION_COLOR = '#2F80ED'
+// 编辑时选中照片框的高亮色（界面元素，不属于风格，见 core/uiColors.js）
+const SELECTION_COLOR = require('../uiColors').selection
 
 /**
  * 把一页画到 canvas 上。所有尺寸按画布宽度等比换算，同一函数可输出 1080 宽和 2480 宽

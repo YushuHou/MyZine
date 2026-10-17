@@ -80,7 +80,7 @@ function createSpreadImageRenderer(options) {
 let thumbRenderer = null
 function getThumbRenderer() {
   if (!thumbRenderer) {
-    thumbRenderer = createSpreadImageRenderer({ width: 360, variant: 'thumb', blankColor: '#FFFFFF', spine: true, quality: 0.8 })
+    thumbRenderer = createSpreadImageRenderer({ width: 360, variant: 'thumb', blankColor: require('../uiColors').desk, spine: true, quality: 0.8 })
   }
   return thumbRenderer
 }

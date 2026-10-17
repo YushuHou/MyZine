@@ -13,17 +13,18 @@
 }
 .subtitle {
   margin-top: 8rpx;
-  color: #8A847A;
+  color: var(--color-text-2);
 }
 
-/* 书籍信息卡片 */
+/* 书籍信息卡片：靛蓝「书封」 */
 .info-card {
   display: flex;
   align-items: center;
   margin-bottom: 32rpx;
   padding: 28rpx;
-  background: #FFFFFF;
-  border-radius: 20rpx;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  border-radius: var(--radius-card);
 }
 .info-main {
   flex: 1;
@@ -42,7 +43,8 @@
 .info-sub {
   margin-top: 8rpx;
   font-size: 26rpx;
-  color: #8A847A;
+  color: var(--color-on-brand);
+  opacity: 0.7;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -50,30 +52,31 @@
 .info-arrow {
   margin-left: 16rpx;
   font-size: 44rpx;
-  color: #C9C1B3;
+  color: var(--color-on-brand);
+  opacity: 0.6;
 }
 
 /* 空状态 */
 .empty {
   margin-top: 0;
   height: 480rpx;
-  border: 4rpx dashed #C9C1B3;
-  border-radius: 24rpx;
+  border: 4rpx dashed var(--color-text-3);
+  border-radius: var(--radius-card);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #8A847A;
+  color: var(--color-text-2);
 }
 .empty-plus {
   font-size: 120rpx;
   line-height: 1;
-  color: #B5835A;
+  color: var(--color-brand);
 }
 .empty-text {
   margin-top: 16rpx;
   font-size: 34rpx;
-  color: #2B2B2B;
+  color: var(--color-text);
 }
 .empty-hint {
   margin-top: 12rpx;
@@ -83,7 +86,7 @@
 /* 照片网格 */
 .count {
   margin-bottom: 16rpx;
-  color: #8A847A;
+  color: var(--color-text-2);
 }
 .grid {
   position: relative;
@@ -91,16 +94,16 @@
 /* 每格绝对定位，位置由 JS 计算，拖动排序时其余照片平滑让位 */
 .cell {
   position: absolute;
-  border-radius: 12rpx;
+  border-radius: var(--radius-btn);
   overflow: hidden;
-  background: #E6E1D8;
+  background: var(--color-placeholder);
   transition: left 0.2s, top 0.2s;
 }
 .cell.dragging {
   z-index: 10;
   transition: none;
   opacity: 0.9;
-  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12rpx 32rpx var(--color-shadow);
 }
 .thumb {
   position: absolute;
@@ -114,14 +117,18 @@
   position: absolute;
   left: 8rpx;
   padding: 0 12rpx;
-  border-radius: 8rpx;
-  background: rgba(0, 0, 0, 0.5);
-  color: #FFFFFF;
+  border-radius: 4rpx;
+  background: var(--color-scrim);
+  color: var(--color-on-scrim);
   font-size: 22rpx;
   line-height: 36rpx;
 }
+/* 照片序号：柯达黄标签 */
 .no {
   top: 8rpx;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 600;
 }
 .badge {
   bottom: 8rpx;
@@ -135,9 +142,9 @@
   line-height: 52rpx;
   text-align: center;
   font-size: 36rpx;
-  color: #FFFFFF;
-  background: rgba(0, 0, 0, 0.45);
-  border-bottom-left-radius: 12rpx;
+  color: var(--color-on-scrim);
+  background: var(--color-scrim);
+  border-bottom-left-radius: var(--radius-btn);
 }
 
 /* 继续添加格子 */
@@ -146,10 +153,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #FFFFFF;
-  border: 4rpx dashed #B5835A;
+  background: var(--color-surface);
+  border: 4rpx dashed var(--color-brand);
   box-sizing: border-box;
-  color: #B5835A;
+  color: var(--color-brand);
 }
 .add-plus {
   font-size: 72rpx;
@@ -165,7 +172,7 @@
   margin-top: 40rpx;
   text-align: center;
   font-size: 24rpx;
-  color: #B9B2A6;
+  color: var(--color-text-3);
   text-decoration: underline;
 }
 
@@ -183,8 +190,8 @@
   display: flex;
   gap: 20rpx;
   padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
-  background: rgba(246, 244, 239, 0.96);
-  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
+  background: var(--color-bg);
+  border-top: 1rpx solid var(--color-line);
 }
 .footer-btn {
   flex: 1;
