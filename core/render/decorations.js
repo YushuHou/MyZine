@@ -2,6 +2,7 @@
 // 全部由风格数据驱动，新增风格只需写数据，不改这里
 const { hashRandom } = require('./frames')
 const { textureSize } = require('./textures')
+const { drawStamp, drawPostmark, drawAirmailBorder } = require('./postcard')
 
 // 风格颜色：可写 colors 中的键名，也可直接写颜色值
 function colorOf(style, value, fallback) {
@@ -76,11 +77,18 @@ function drawGrain(ctx, style, W, H, unit, images) {
   ctx.restore()
 }
 
-// 装饰是否画在这一页：pages 'all' | 'left' | 'right'；pageTypes 如 ['body']
-function appliesTo(d, page) {
+// 装饰是否画在这一页：pages 'all' | 'left' | 'right'；pageTypes 如 ['body']；
+// chance：按跨页 id + 左右页稳定地「偶尔出现」（0–1）
+function appliesTo(d, page, index) {
   if (d.pages && d.pages !== 'all' && d.pages !== page.side) return false
   if (d.pageTypes && d.pageTypes.indexOf(page.pageType) < 0) return false
+  if (d.chance != null && hashRandom(`deco:${page.spreadId || ''}:${page.side}:${index}`) >= d.chance) return false
   return true
+}
+
+// mirror: true 的矩形类装饰在右页左右镜像（如「外侧下角」的色块）
+function mirroredX(d, page) {
+  return d.mirror && page.side === 'right' ? 1 - d.x - (d.w || 0) : d.x
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -101,14 +109,18 @@ function roundRect(ctx, x, y, w, h, r) {
  * - text：{ text, x, y, size, family, weight, color, align, letterSpacing, mirror（右页左右镜像） }
  * - perforation 胶片齿孔：{ edge: 'top' | 'bottom' | 'both', holeW, holeH, gap, offset（离页边）, radius, color }
  * - gutterLine 中缝细线：{ color, width（基准 px） }，画在靠中缝的页边（跨页大图画在中线）
+ * - airmailBorder 航空信封红蓝斜条页边：{ colors, width, stripe }
+ * 通用：chance（偶尔出现）、mirror（右页镜像）、pages、pageTypes
  */
 function drawDecorations(ctx, style, page, W, H, unit, images) {
-  ;(style.decorations || []).forEach(d => {
-    if (!appliesTo(d, page)) return
+  ;(style.decorations || []).forEach((d, index) => {
+    if (!appliesTo(d, page, index)) return
     ctx.save()
     if (d.type === 'rect') {
       ctx.fillStyle = colorOf(style, d.color, '#000')
-      ctx.fillRect(d.x * W, d.y * H, d.w * W, d.h * H)
+      ctx.fillRect(mirroredX(d, page) * W, d.y * H, d.w * W, d.h * H)
+    } else if (d.type === 'airmailBorder') {
+      drawAirmailBorder(ctx, style, d, page, W, H, unit)
     } else if (d.type === 'line') {
       ctx.strokeStyle = colorOf(style, d.color, '#000')
       ctx.lineWidth = (d.lineWidth || 2) * unit
@@ -183,16 +195,25 @@ function drawPerforation(ctx, style, d, W, H, unit) {
 /**
  * 照片框装饰（画在照片上面，坐标系已按照片框旋转）
  * - tape 和纸胶带：{ colors, width, height, angleJitter, placement: 'top' | 'corners' }
+ * - stamp 邮票框 / postmark 邮戳圆环（明信片）：largestOnly 时只画在本页最大的照片框上；minWidth 小于它的框不画
  * - dateStamp 日期戳：画在照片区域内，见 drawDateStamp
  * @param frame  resolveFrames 之后的照片框
- * @param rect   照片框外框（画布 px）{ x, y, w, h }
+ * @param rect   照片框外形区域（画布 px）{ x, y, w, h }
  * @param seed   随机种子
+ * @param ctxInfo { info: 书籍信息, isLargest: 是否为本页最大的照片框 }
  */
-function drawFrameDecorations(ctx, style, frame, rect, unit, seed) {
+function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {}) {
   // 满版、不加边框的框（如四格条）不贴胶带等装饰
   if (!frame.framed) return
+  let stampRect = null
   ;(style.frameDecorations || []).forEach(d => {
+    if (d.largestOnly && !ctxInfo.isLargest) return
+    if (d.minWidth && rect.w < d.minWidth * unit) return
+    // 邮票、邮戳只贴在矩形照片上（圆形、拱形的外接方框角上是空的）
+    if ((d.type === 'stamp' || d.type === 'postmark') && frame.shape !== 'rect' && frame.shape !== 'rounded') return
     if (d.type === 'tape') drawTapes(ctx, d, rect, unit, seed)
+    else if (d.type === 'stamp') stampRect = drawStamp(ctx, style, d, rect, unit, seed)
+    else if (d.type === 'postmark' && stampRect) drawPostmark(ctx, style, d, stampRect, ctxInfo.info, unit, seed)
   })
 }
 

@@ -67,8 +67,12 @@ function hitsFrames(rect, frames, W, H) {
 }
 
 /**
- * 版式文字槽：layoutPage.slots = [{ type, x, y（基线）, w, align }]，坐标 0–1
- * 风格 decoText[type] = { text, font, minScale }；太宽时缩小字号（不小于 minScale，默认 0.5）
+ * 版式文字槽：layoutPage.slots = [{ type, x, y（第一行基线）, w, align }]，坐标 0–1
+ * 风格 decoText[type]：
+ *   单行 { text, font, minScale, shadow }
+ *   多行 { lines: [{ text, font, ifMissing: { var, text } }], lineGap（基准 px）, shadow }
+ *     中西文混排的标题分行（如「Greetings from」+ 地点），某行变量为空则跳过；ifMissing 指定变量为空时改用的文字
+ *   太宽时缩小字号（不小于 minScale，默认 0.5）；shadow：压在照片上时加柔和阴影
  * @returns 画出的文字区域（画布 px），供线稿避让
  */
 function drawSlots(ctx, style, page, layoutPage, W, H, unit) {
@@ -78,18 +82,31 @@ function drawSlots(ctx, style, page, layoutPage, W, H, unit) {
   ;(layoutPage.slots || []).forEach(slot => {
     const def = defs[slot.type]
     if (!def) return
-    const text = fillTemplate(def.text, vars)
-    if (!text) return
-    const spec = specOf(def.font || {}, unit)
-    const maxW = slot.w * W
-    const w = measureGlyphText(ctx, spec, text)
-    if (w > maxW) spec.size *= Math.max(def.minScale || 0.5, maxW / w)
+    const lines = (def.lines || [{ text: def.text, font: def.font }]).map(line => {
+      const template = line.ifMissing && !vars[line.ifMissing.var] ? line.ifMissing.text : line.text
+      return { text: fillTemplate(template, vars), font: line.font || def.font || {} }
+    }).filter(line => line.text)
+    if (!lines.length) return
     const align = slot.align || 'left'
     const x = align === 'center' ? (slot.x + slot.w / 2) * W : align === 'right' ? (slot.x + slot.w) * W : slot.x * W
-    const y = slot.y * H
-    const width = drawGlyphText(ctx, spec, text, x, y, align, colorOf(style, def.font && def.font.color))
-    const left = align === 'center' ? x - width / 2 : align === 'right' ? x - width : x
-    drawn.push({ x: left, y: y - spec.size, w: width, h: spec.size * 1.3 })
+    const maxW = slot.w * W
+    let y = slot.y * H
+    ctx.save()
+    if (def.shadow) {
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.35)'
+      ctx.shadowBlur = 12 * unit
+      ctx.shadowOffsetY = 2 * unit
+    }
+    lines.forEach((line, i) => {
+      const spec = specOf(line.font, unit)
+      const w = measureGlyphText(ctx, spec, line.text)
+      if (w > maxW) spec.size *= Math.max(def.minScale || 0.5, maxW / w)
+      if (i > 0) y += def.lineGap ? def.lineGap * unit : spec.size * 1.15
+      const width = drawGlyphText(ctx, spec, line.text, x, y, align, colorOf(style, line.font.color))
+      const left = align === 'center' ? x - width / 2 : align === 'right' ? x - width : x
+      drawn.push({ x: left, y: y - spec.size, w: width, h: spec.size * 1.3 })
+    })
+    ctx.restore()
   })
   return drawn
 }

@@ -52,10 +52,11 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   drawBlocks(ctx, style, layoutPage, W, H)
   drawDecorations(ctx, style, page, W, H, unit, images)
   frames.forEach(frame => drawFrame(ctx, frame, page.slots[frame.id], style, images, W, H, unit, page))
-  // 胶带等照片框装饰在所有照片之后画，可以压住相邻照片
+  // 胶带、邮票等照片框装饰在所有照片之后画，可以压住相邻照片
+  const largest = frames.filter(f => f.framed).reduce((best, f) => (!best || f.w * f.h > best.w * best.h ? f : best), null)
   frames.forEach(frame => {
     withFrameTransform(ctx, frame, W, H, rect => {
-      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`)
+      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest })
     })
   })
   ;(layoutPage.texts || []).forEach(block => {

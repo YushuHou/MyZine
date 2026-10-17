@@ -1,34 +1,82 @@
-<!-- 模板选择 -->
+<!-- 模板选择：纯色 / 风格 / 主题 -->
 <view class="page">
-  <view wx:if="{{mode === 'first'}}" class="tip">选一套风格作为整本书的主模板，之后可随时更换，也可以给单个跨页换风格</view>
+  <view wx:if="{{mode === 'first'}}" class="tip">选一套风格作为整本书的主模板（示例用你的照片）。之后可在「管理跨页」中更换，也可以给单个跨页换风格</view>
 
   <view class="filters">
-    <view class="filter {{filter === 'all' ? 'active' : ''}}" data-filter="all" bindtap="onFilter">全部风格</view>
+    <view class="filter {{filter === 'all' ? 'active' : ''}}" data-filter="all" bindtap="onFilter">全部</view>
     <view class="filter {{filter === 'theme' ? 'active' : ''}}" data-filter="theme" bindtap="onFilter">按主题</view>
   </view>
-
   <view wx:if="{{filter === 'theme'}}" class="themes">
     <view wx:for="{{themes}}" wx:key="key" class="theme {{theme === item.key ? 'active' : ''}}" data-key="{{item.key}}" bindtap="onTheme">{{item.name}}</view>
   </view>
 
-  <view wx:if="{{!visibleCards.length}}" class="empty">暂时没有适合这个主题的风格</view>
-
-  <view wx:for="{{visibleCards}}" wx:key="id" class="card {{item.id === currentId ? 'current' : ''}}" data-id="{{item.id}}" bindtap="onSelect">
+  <!-- 跟随主模板（单个跨页换风格时） -->
+  <view wx:if="{{followCard}}" class="card {{currentId === followCard.id ? 'current' : ''}}" data-id="{{followCard.id}}" bindtap="onSelect">
     <view class="preview">
-      <image wx:if="{{item.preview}}" class="preview-img" src="{{item.preview}}" mode="aspectFit" />
+      <image wx:if="{{followCard.preview}}" class="preview-img" src="{{followCard.preview}}" mode="aspectFit" />
       <view wx:else class="loading">生成示例中…</view>
     </view>
     <view class="card-main">
-      <view class="card-title">
-        <text class="name">{{item.name}}</text>
-        <text wx:if="{{item.id === currentId}}" class="badge">当前</text>
-      </view>
-      <view wx:if="{{item.description}}" class="desc">{{item.description}}</view>
-      <view wx:if="{{item.themesText}}" class="themes-text">适合：{{item.themesText}}</view>
+      <view class="card-title"><text class="name">{{followCard.name}}</text><text wx:if="{{currentId === followCard.id}}" class="badge">当前</text></view>
+      <view class="desc">{{followCard.description}}</view>
     </view>
   </view>
 
-  <view wx:if="{{mode === 'first'}}" class="footer">
-    <button class="btn-secondary" bindtap="onSkip">跳过，使用纸白</button>
-  </view>
+  <!-- 纯色：色块小圆点切换 -->
+  <block wx:if="{{visibleSolids.length}}">
+    <view class="group-title">纯色</view>
+    <view class="card solid-card {{currentId === focusSolid.id ? 'current' : ''}}">
+      <view class="preview">
+        <image wx:if="{{solidPreview}}" class="preview-img" src="{{solidPreview}}" mode="aspectFit" />
+        <view wx:else class="loading">生成示例中…</view>
+      </view>
+      <view class="swatches">
+        <view wx:for="{{visibleSolids}}" wx:key="id" class="swatch-wrap" data-id="{{item.id}}" bindtap="onSwatch">
+          <view class="swatch {{item.id === focusSolid.id ? 'focus' : ''}}" style="background: {{item.swatch}};"></view>
+          <view class="swatch-name">{{item.name}}</view>
+        </view>
+      </view>
+      <view class="solid-bottom">
+        <view class="card-main solid-info">
+          <view class="card-title"><text class="name">{{focusSolid.name}}</text><text wx:if="{{currentId === focusSolid.id}}" class="badge">当前</text></view>
+          <view class="desc">{{focusSolid.description}}</view>
+        </view>
+        <view class="use-btn" bindtap="onUseSolid">使用</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 风格 -->
+  <block wx:if="{{visibleStyleCards.length}}">
+    <view class="group-title">风格</view>
+    <view wx:for="{{visibleStyleCards}}" wx:key="id" class="card {{item.id === currentId ? 'current' : ''}}" data-id="{{item.id}}" bindtap="onSelect">
+      <view class="preview">
+        <image wx:if="{{item.preview}}" class="preview-img" src="{{item.preview}}" mode="aspectFit" />
+        <view wx:else class="loading">生成示例中…</view>
+      </view>
+      <view class="card-main">
+        <view class="card-title"><text class="name">{{item.name}}</text><text wx:if="{{item.id === currentId}}" class="badge">当前</text></view>
+        <view wx:if="{{item.description}}" class="desc">{{item.description}}</view>
+        <view wx:if="{{item.themesText}}" class="themes-text">适合：{{item.themesText}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 主题 -->
+  <block wx:if="{{visibleThemeCards.length}}">
+    <view class="group-title">主题</view>
+    <view wx:for="{{visibleThemeCards}}" wx:key="id" class="card {{item.id === currentId ? 'current' : ''}}" data-id="{{item.id}}" bindtap="onSelect">
+      <view class="preview">
+        <image wx:if="{{item.preview}}" class="preview-img" src="{{item.preview}}" mode="aspectFit" />
+        <view wx:else class="loading">生成示例中…</view>
+      </view>
+      <view class="card-main">
+        <view class="card-title"><text class="name">{{item.name}}</text><text wx:if="{{item.id === currentId}}" class="badge">当前</text></view>
+        <view wx:if="{{item.description}}" class="desc">{{item.description}}</view>
+        <view wx:if="{{item.themesText}}" class="themes-text">适合：{{item.themesText}}</view>
+      </view>
+    </view>
+  </block>
+
+  <view wx:if="{{!visibleSolids.length && !visibleStyleCards.length && !visibleThemeCards.length}}" class="empty">暂时没有适合这个主题的风格</view>
 </view>

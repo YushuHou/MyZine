@@ -86,10 +86,13 @@ function autoLayout(album) {
     let best = null
     candidates.forEach(layout => {
       const frames = getLayoutFrames(layout)
+      // 风格明确偏好（权重 ≥ 2）的版式，方框按完全匹配算：方形裁切对任何照片都可接受（如四格条、圆形框）
+      const preferred = style && style.layoutWeights && style.layoutWeights[layout.id] >= 2
       let score = 0
       frames.forEach((frame, k) => {
         const photo = photos[i + k]
-        if (photo) score += matchScore(frame.orientation, photo.orientation)
+        if (!photo) return
+        score += preferred && frame.orientation === 'square' ? 2 : matchScore(frame.orientation, photo.orientation)
       })
       score /= frames.length
       // 选它会让最后只剩 1 张照片时降低优先级：剩下的 1 张只能进跨页大图（横框），竖图会被裁得很难看

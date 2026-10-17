@@ -3,7 +3,9 @@
 module.exports = [].concat(
   require('./solids'),
   [
+    require('./magazine'),
+    require('./journal'),
     require('./film'),
-    require('./journal')
+    require('./postcard')
   ]
 )

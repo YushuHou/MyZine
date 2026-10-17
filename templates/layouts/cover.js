@@ -14,6 +14,10 @@ module.exports = [
         frames: [
           { id: 'C1', x: 0.0889, y: 0.0667, w: 0.8222, h: 0.6, orientation: 'square', radius: 0, rotate: 0, border: true }
         ],
+        // 问候语槽：压在照片左上部（风格定义了 greeting 才显示，如海边明信片「Greetings from {location}」）
+        slots: [
+          { type: 'greeting', x: 0.1444, y: 0.16, w: 0.5, align: 'left' }
+        ],
         // 文字块底部对齐 y 1344，内容少时贴底，多时向上长
         texts: [
           {

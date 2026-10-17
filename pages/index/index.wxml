@@ -14,14 +14,6 @@
     <view class="info-arrow">›</view>
   </view>
 
-  <view class="info-card" bindtap="onChangeTemplate">
-    <view class="info-main">
-      <view class="info-title">模板：{{styleName}}</view>
-      <view class="info-sub">点击更换，可按风格或主题筛选</view>
-    </view>
-    <view class="info-arrow">›</view>
-  </view>
-
   <view wx:if="{{!photos.length}}" class="empty" bindtap="onAddPhotos">
     <view class="empty-plus">+</view>
     <view class="empty-text">添加照片</view>

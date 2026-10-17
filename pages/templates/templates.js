@@ -1,5 +1,6 @@
-// 模板（风格）选择：可按风格或按主题筛选，示例用用户自己的照片渲染
-// mode：first 第一次开始制作（选完或跳过后生成整本书进入编辑）
+// 模板（风格）选择：分「纯色 / 风格 / 主题」三组，可按主题筛选，示例用用户自己的照片渲染
+// 纯色组用色块小圆点快速切换（只渲染当前选中颜色的一张示例），其余每个风格一张示例跨页
+// mode：first 第一次开始制作（选定后生成整本书进入编辑）
 //       change 更换主模板
 //       spread 给某个跨页单独换风格（多一个「跟随主模板」选项）
 const app = getApp()
@@ -9,13 +10,17 @@ const { buildBook } = require('../../core/book')
 const { createSpreadImageRenderer } = require('../../core/render/spreadImages')
 const THEMES = require('../../templates/themes')
 
-// 示例跨页使用的版式：一大一小横图 + 竖图，能同时看到边框、装饰、留白
-const SAMPLE_LAYOUT = 'b-L2D-P1'
+// 示例跨页的版式：左页标题 + 小图、右页大横图，能看到大标题、页眉、线稿、边框等风格特征
+const SAMPLE_LAYOUT = 'b-H1L-L1'
 // 「跟随主模板」选项的 id
 const FOLLOW = 'follow'
 
 const themeName = {}
 THEMES.forEach(t => { themeName[t.key] = t.name })
+
+function themesText(style) {
+  return (style.tags || []).map(k => themeName[k]).filter(Boolean).join(' · ')
+}
 
 Page({
   data: {
@@ -23,9 +28,18 @@ Page({
     filter: 'all',
     themes: THEMES,
     theme: '',
-    cards: [],
-    visibleCards: [],
-    currentId: ''
+    currentId: '',
+    // 纯色组
+    solids: [],
+    visibleSolids: [],
+    focusSolid: null,
+    solidPreview: '',
+    // 风格组、主题组、跟随主模板
+    styleCards: [],
+    themeCards: [],
+    visibleStyleCards: [],
+    visibleThemeCards: [],
+    followCard: null
   },
 
   onLoad(query) {
@@ -45,34 +59,28 @@ Page({
       blankColor: '#FFFFFF',
       spine: true
     })
+    this.sample = this.sampleSpread()
 
-    const sample = this.sampleSpread()
-    const cards = listStyles().map(style => ({
-      id: style.id,
-      name: style.name,
-      description: style.description || '',
-      themesText: (style.tags || []).map(k => themeName[k]).filter(Boolean).join(' · '),
-      tags: style.tags || [],
-      preview: '',
-      // 每个风格一个独立的示例跨页（id 不同，缓存互不覆盖）
-      spread: Object.assign({}, sample, { id: `tpl_${style.id}`, styleId: style.id })
-    }))
-    if (this.mode === 'spread') {
-      const main = getStyle(this.album.defaultStyleId)
-      cards.unshift({
-        id: FOLLOW,
-        name: `跟随主模板（${main.name}）`,
-        description: '主模板更换时，这个跨页跟着变',
-        themesText: '',
-        tags: null,
-        preview: '',
-        spread: Object.assign({}, sample, { id: `tpl_${FOLLOW}`, styleId: null })
-      })
-    }
-    this.cards = cards
+    const styles = listStyles()
+    const toCard = s => ({ id: s.id, name: s.name, description: s.description || '', themesText: themesText(s), tags: s.tags || [], preview: '' })
+    const solids = styles.filter(s => s.group === 'solid').map(s => ({ id: s.id, name: s.name, swatch: s.swatch || s.colors.background, description: s.description || '', tags: s.tags || [] }))
     const currentId = this.mode === 'spread' ? (this.spread.styleId || FOLLOW) : this.album.defaultStyleId
-    this.setData({ mode: this.mode, currentId, cards: cards.map(({ spread, ...card }) => card) }, () => this.applyFilter())
-    this.renderPreviews()
+    const current = getStyle(currentId === FOLLOW ? this.album.defaultStyleId : currentId)
+    const focus = solids.find(s => s.id === current.id) || solids[0]
+    const main = getStyle(this.album.defaultStyleId)
+
+    this.setData({
+      mode: this.mode,
+      currentId,
+      solids,
+      focusSolid: focus,
+      styleCards: styles.filter(s => s.group === 'style').map(toCard),
+      themeCards: styles.filter(s => s.group === 'theme').map(toCard),
+      followCard: this.mode === 'spread'
+        ? { id: FOLLOW, name: `跟随主模板（${main.name}）`, description: '主模板更换时，这个跨页跟着变', preview: '' }
+        : null
+    }, () => this.applyFilter())
+    this.renderAll()
   },
 
   onUnload() {
@@ -90,15 +98,41 @@ Page({
     return createSpread('body', SAMPLE_LAYOUT, slots)
   },
 
-  // 逐个生成示例图
-  async renderPreviews() {
-    for (let i = 0; i < this.cards.length; i++) {
-      try {
-        const path = await this.renderer.render(this.album, this.cards[i].spread)
-        this.setData({ [`cards[${i}].preview`]: path }, () => this.applyFilter())
-      } catch (err) {
-        console.warn('生成模板示例失败', err)
+  // 某个风格的示例图（每个风格一个独立的示例跨页 id，缓存互不覆盖）
+  renderPreview(styleId) {
+    const spread = Object.assign({}, this.sample, {
+      id: `tpl_${styleId}`,
+      styleId: styleId === FOLLOW ? null : styleId,
+      inverted: false
+    })
+    return this.renderer.render(this.album, spread)
+  },
+
+  // 先渲染当前纯色，再逐个渲染风格组、主题组
+  async renderAll() {
+    await this.renderSolidPreview()
+    const lists = [['followCard', this.data.followCard ? [this.data.followCard] : []], ['styleCards', this.data.styleCards], ['themeCards', this.data.themeCards]]
+    for (const [key, cards] of lists) {
+      for (let i = 0; i < cards.length; i++) {
+        try {
+          const path = await this.renderPreview(cards[i].id)
+          this.setData({ [key === 'followCard' ? 'followCard.preview' : `${key}[${i}].preview`]: path }, () => this.applyFilter())
+        } catch (err) {
+          console.warn('生成模板示例失败', err)
+        }
       }
+    }
+  },
+
+  async renderSolidPreview() {
+    const id = this.data.focusSolid && this.data.focusSolid.id
+    if (!id) return
+    try {
+      const path = await this.renderPreview(id)
+      // 期间可能已切到别的颜色
+      if (this.data.focusSolid.id === id) this.setData({ solidPreview: path })
+    } catch (err) {
+      console.warn('生成纯色示例失败', err)
     }
   },
 
@@ -114,16 +148,35 @@ Page({
   },
 
   applyFilter() {
-    const { filter, theme, cards } = this.data
-    // 「跟随主模板」不属于任何主题，始终显示
-    const visibleCards = filter === 'theme' ? cards.filter(c => !c.tags || c.tags.indexOf(theme) >= 0) : cards
-    this.setData({ visibleCards })
+    const { filter, theme } = this.data
+    const pass = item => filter !== 'theme' || (item.tags || []).indexOf(theme) >= 0
+    this.setData({
+      visibleSolids: this.data.solids.filter(pass),
+      visibleStyleCards: this.data.styleCards.filter(pass),
+      visibleThemeCards: this.data.themeCards.filter(pass)
+    })
+  },
+
+  // ---------- 纯色：小圆点切换预览，点按钮使用 ----------
+
+  onSwatch(e) {
+    const solid = this.data.solids.find(s => s.id === e.currentTarget.dataset.id)
+    if (!solid || solid.id === this.data.focusSolid.id) return
+    this.setData({ focusSolid: solid, solidPreview: '' })
+    this.renderSolidPreview()
+  },
+
+  onUseSolid() {
+    this.select(this.data.focusSolid.id)
   },
 
   // ---------- 选择 ----------
 
   onSelect(e) {
-    const id = e.currentTarget.dataset.id
+    this.select(e.currentTarget.dataset.id)
+  },
+
+  select(id) {
     if (this.mode === 'spread') {
       this.spread.styleId = id === FOLLOW ? null : id
       wx.navigateBack()
@@ -132,11 +185,6 @@ Page({
     this.album.defaultStyleId = id
     if (this.mode === 'first') this.startBook()
     else wx.navigateBack()
-  },
-
-  // 第一次开始制作：跳过时使用默认的纸白
-  onSkip() {
-    this.startBook()
   },
 
   startBook() {
