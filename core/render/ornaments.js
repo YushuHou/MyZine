@@ -11,7 +11,7 @@
 //     { type: 'deco', deco: { …页面装饰… }, weight }                                          // 任意页面装饰（如格纹桌布页边）
 //   ],
 //   small: [{ type: 'doodle', weight }, { type: 'seal', size: [110, 150], color, weight }, { type: 'passport', size: [140, 180], count: [1, 3], colors, weight },
-//           { type: 'tornStrip', size: [240, 340], paper, height, font, text, weight }（撕纸条）, { type: 'luggageTag', size: [260, 320], paper, band, string, weight }（行李吊牌）],
+//           { type: 'tornStrip', size: [240, 340], paper, height, font, text, weight }（撕纸条）, { type: 'luggageTag', size: [260, 320], paper, band, string, weight }（行李吊牌）, { type: 'miniCard', size: [145, 205], weight }（旅行便签）],
 //   smallPerSpread: [2, 3],
 //   pageTypes: ['body']
 // }
@@ -74,6 +74,23 @@ function between(range, t) {
 
 function intBetween(range, t) {
   return range[0] + Math.min(range[1] - range[0], Math.floor(t * (range[1] - range[0] + 1)))
+}
+
+// 以照片框占用面积估算跨页密度；只作为装饰数量参考，不影响版式或照片裁切
+function pageCoverage(layout, side) {
+  const frames = getLayoutPage(layout, side).frames || []
+  return Math.min(1, frames.reduce((sum, frame) => sum + frame.w * frame.h, 0))
+}
+
+function photoCoverage(layout, sides) {
+  const values = sides.map(side => pageCoverage(layout, side))
+  return values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1)
+}
+
+function adaptiveRange(range, coverage, enabled) {
+  if (!enabled) return range
+  const adjustment = coverage < 0.28 ? 2 : coverage < 0.46 ? 1 : coverage > 0.6 ? -1 : 0
+  return [Math.max(1, range[0] + adjustment), Math.max(1, range[1] + adjustment)]
 }
 
 /**
@@ -199,20 +216,23 @@ function planOrnaments(style, page, layout) {
     // 小装饰
     const types = cfg ? (cfg.small || []) : (doodleCfg.names ? [{ type: 'doodle' }] : [])
     const range = cfg ? (cfg.smallPerSpread || [2, 3]) : (doodleCfg.perSpread || [2, 3])
-    const quota = intBetween(range, rnd('small:n'))
+    const coverage = photoCoverage(layout, sides)
+    const quota = intBetween(adaptiveRange(range, coverage, !cfg || cfg.adaptive !== false), rnd('small:n'))
     const items = []
     let sealDone = !sealChars(location)
     let passportDone = false
     // 撕纸条、行李吊牌每跨页最多 1 个；风格已有照片角撕纸条时不再放留白处的纸条
     let stripDone = frameStrip
     let tagDone = false
+    let cardDone = false
     for (let i = 0; i < quota; i++) {
       const avail = types.filter(t =>
         (t.type === 'doodle' && (doodleCfg.names || []).some(n => !used[n])) ||
         (t.type === 'seal' && !sealDone) ||
         (t.type === 'passport' && !passportDone) ||
         (t.type === 'tornStrip' && !stripDone) ||
-        (t.type === 'luggageTag' && !tagDone))
+        (t.type === 'luggageTag' && !tagDone) ||
+        (t.type === 'miniCard' && !cardDone))
       if (!avail.length) break
       const t = avail[pickWeighted(avail, rnd, `small:type:${i}`)]
       if (t.type === 'doodle') items.push({ type: 'doodle', name: take(doodleCfg.names, `doodle:${i}`) })
@@ -225,6 +245,9 @@ function planOrnaments(style, page, layout) {
       } else if (t.type === 'luggageTag') {
         tagDone = true
         items.push({ type: 'luggageTag', cfg: t, size: between(t.size || [260, 320], rnd(`tag:size:${i}`)) })
+      } else if (t.type === 'miniCard') {
+        cardDone = true
+        items.push({ type: 'miniCard', cfg: t, size: between(t.size || [145, 205], rnd(`card:size:${i}`)) })
       } else {
         passportDone = true
         items.push({ type: 'passport', cfg: t, size: between(t.size || [140, 180], rnd(`pp:size:${i}`)), count: intBetween(t.count || [1, 3], rnd(`pp:count:${i}`)) })
@@ -233,8 +256,14 @@ function planOrnaments(style, page, layout) {
     // 分到左右页
     const order = shuffled(items.map((it, i) => i), rnd, 'small:order')
     if (sides.length === 2) {
-      const leftCount = Math.floor(items.length / 2) + (rnd('small:split') < 0.5 ? items.length % 2 : 0)
-      order.forEach((idx, k) => plan.small[k < leftCount ? 'left' : 'right'].push(items[idx]))
+      order.forEach((idx, k) => {
+        const leftScore = pageCoverage(layout, 'left') + plan.small.left.length * 0.055
+        const rightScore = pageCoverage(layout, 'right') + plan.small.right.length * 0.055
+        const side = Math.abs(leftScore - rightScore) < 0.015
+          ? (rnd(`small:side:${k}`) < 0.5 ? 'left' : 'right')
+          : leftScore < rightScore ? 'left' : 'right'
+        plan.small[side].push(items[idx])
+      })
     } else {
       order.forEach(idx => plan.small[sides[0]].push(items[idx]))
     }
@@ -308,17 +337,18 @@ function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, b
       : it.type === 'passport' ? passportRadius(size, it.count)
       : it.type === 'tornStrip' ? size * 0.46
       : it.type === 'luggageTag' ? size * 0.46
+      : it.type === 'miniCard' ? size * 0.8
       : size / 2
     return { it, size, radius: radius + 12 * unit }
   }).sort((a, b) => b.radius - a.radius)
   const taken = {}
   // 找一个放得下的装饰位；印章放不下时依次缩小再试（线稿只试原尺寸）
-  const findSpot = radius => {
+  const findSpot = (radius, marginScale) => {
     for (let i = 0; i < candidates.length; i++) {
       const c = candidates[i]
       if (taken[c.key]) continue
       // 大的章往页内收一点，不出页边
-      const margin = radius * 0.8
+      const margin = radius * (marginScale || 0.8)
       const x = Math.max(c.ox + margin, Math.min(c.ox + pageW - margin, c.x))
       const y = Math.max(margin, Math.min(H - margin, c.y))
       if (blocked.every(b => x + radius < b.x || x - radius > b.x + b.w || y + radius < b.y || y - radius > b.y + b.h)) return { x, y, key: c.key }
@@ -331,7 +361,7 @@ function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, b
     const scales = it.type === 'doodle' ? [1] : [1, 0.8, 0.65]
     for (let i = 0; i < scales.length && !spot; i++) {
       scale = scales[i]
-      spot = findSpot(radius * scale)
+      spot = findSpot(radius * scale, it.type === 'miniCard' ? 1 : 0.8)
     }
     if (!spot) return
     const r = radius * scale
@@ -354,10 +384,72 @@ function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, b
       drawLuggageTag(ctx, style, it.cfg, spot.x, spot.y, size * scale, page, unit, `${seed}:${page.side}`, outward, bg)
     } else if (it.type === 'seal') {
       drawSeal(ctx, style, it.cfg, spot.x, spot.y, size * scale, page.info, `${seed}:${page.side}`, bg)
+    } else if (it.type === 'miniCard') {
+      drawMiniCard(ctx, style, it.cfg, spot.x, spot.y, size * scale, page, unit, `${seed}:${page.side}:${k}`)
     } else {
       drawPassportStamps(ctx, style, it.cfg, spot.x, spot.y, size * scale, it.count, page.info, `${seed}:${page.side}`, bg)
     }
   })
+}
+
+// 小型旅行便签：原生 Canvas 系统字体可绘制中英文，内容为空时使用简短的通用标题
+function drawMiniCard(ctx, style, cfg, cx, cy, size, page, unit, seed) {
+  const w = size * 1.55
+  const h = size * 0.9
+  const angle = (hashRandom(`${seed}:angle`) * 2 - 1) * (cfg.rotate || 4) * Math.PI / 180
+  const colors = style.colors || {}
+  const paper = colors.fitFill || '#FFFFFF'
+  const accent = colorOf(style, cfg.color || 'accent')
+  const location = ((page.info && page.info.location) || '').trim()
+  const date = (page.info && (page.info.date || page.info.dateStart)) || ''
+  const headline = location || ((page.info && page.info.title) || '') || 'TRAVEL NOTES'
+  const labels = {
+    magazine: 'TRAVEL EDITION', journal: 'LITTLE DIARY', film: 'FRAME NO.', zine: 'SIDE NOTE',
+    ticket: 'ADMIT ONE', collage: 'CUT & KEEP', hkretro: 'AFTER HOURS', japanese: 'DAILY NOTE',
+    mono: 'CONTACT SHEET', postcard: 'POSTCARD', nature: 'FIELD NOTE', food: 'TASTING NOTE',
+    farm: 'HELLO FRIEND', roadtrip: 'MILE MARKER', heritage: 'COLLECTED', renaissance: 'ART OF TRAVEL',
+    city: 'CITY NOTE', cat: 'CAT DIARY', dog: 'WALK NOTE', couple: 'JUST US', family: 'OUR DAY'
+  }
+  ctx.save()
+  ctx.translate(cx, cy)
+  ctx.rotate(angle)
+  ctx.shadowColor = 'rgba(50, 40, 35, 0.2)'
+  ctx.shadowBlur = 10 * unit
+  ctx.shadowOffsetY = 4 * unit
+  ctx.fillStyle = paper
+  ctx.fillRect(-w / 2, -h / 2, w, h)
+  ctx.shadowColor = 'transparent'
+  ctx.strokeStyle = accent
+  ctx.lineWidth = Math.max(1, 2 * unit)
+  ctx.strokeRect(-w / 2 + 5 * unit, -h / 2 + 5 * unit, w - 10 * unit, h - 10 * unit)
+  ctx.fillStyle = accent
+  ctx.fillRect(-w / 2 + 6 * unit, -h / 2 + 6 * unit, w - 12 * unit, 18 * unit)
+  ctx.fillStyle = '#FFFFFF'
+  ctx.font = `bold ${Math.max(9, 11 * unit)}px sans-serif`
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(labels[style.id] || 'TRAVEL NOTE', -w / 2 + 12 * unit, -h / 2 + 15 * unit, w - 24 * unit)
+  ctx.fillStyle = colors.text || '#333333'
+  ctx.font = `bold ${Math.max(10, 20 * unit)}px sans-serif`
+  let textSize = Math.max(10, 20 * unit)
+  while (ctx.measureText(headline).width > w - 24 * unit && textSize > 9 * unit) {
+    textSize -= unit
+    ctx.font = `bold ${Math.max(9, textSize)}px sans-serif`
+  }
+  ctx.fillText(headline, -w / 2 + 12 * unit, -h / 2 + h * 0.58, w - 24 * unit)
+  ctx.strokeStyle = accent
+  ctx.globalAlpha = 0.7
+  ctx.lineWidth = Math.max(1, 1.5 * unit)
+  ctx.beginPath()
+  ctx.moveTo(-w / 2 + 12 * unit, h / 2 - 25 * unit)
+  ctx.lineTo(w / 2 - 12 * unit, h / 2 - 25 * unit)
+  ctx.stroke()
+  if (date) {
+    ctx.fillStyle = colors.textMuted || accent
+    ctx.font = `${Math.max(9, 13 * unit)}px sans-serif`
+    ctx.fillText(date, -w / 2 + 12 * unit, h / 2 - 12 * unit, w - 24 * unit)
+  }
+  ctx.restore()
 }
 
 module.exports = { SPOTS, planOrnaments, drawBigOrnament, drawSmallOrnaments, drawPattern }

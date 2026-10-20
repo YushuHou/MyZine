@@ -2,6 +2,8 @@
 
 把旅行照片做成照片书的微信小程序。原生小程序 + JavaScript，WebView 渲染，画布用 `canvas type="2d"`；纯本地运行，不联网、不登录、不用云开发。
 
+当前有 **29 套模板**：纯色 8 套、风格 9 套、主题 12 套；共用 44 种正文排版。本次新增主题只改变配色、纸张纹理、照片边框、文字和矢量装饰，不替换或修改照片内容。
+
 需求见 `docs/MyZine需求文档.md`，各阶段方案、真机验证结论和离线预览图见 `docs/plans/`。
 
 ---
@@ -46,7 +48,8 @@ core/                               逻辑层（不依赖页面）
     glyphText.js    字形路径文字（西文）+ 系统字体（中文），同一行基线对齐
     svgPath.js      SVG 路径解析（M/L/H/V/C/S/Q/T/A/Z）
     doodles.js      线稿绘制
-    ornaments.js    跨页装饰计划：1 个大装饰 + 2–3 个小装饰，同一跨页线稿不重复；小装饰的摆放
+    ornaments.js    跨页装饰计划：按照片覆盖率调整小装饰数量，空页优先补充；同一跨页线稿不重复
+    scrapbook.js    代码绘制撕边纸片；装饰数量按版式的照片覆盖面积自动增减
     scenery.js      程序生成的场景剪影：山脉、树林、海浪、城市天际线、丘陵
     seals.js        中式红色方印（地名竖排）、护照入境章
     paperBits.js    撕纸条（毛边 + 纸芯，写短句或地点日期）、行李吊牌（孔、麻绳、栏位、条形码）
@@ -113,7 +116,7 @@ renderPage / renderSpread     背景（+ 纹样）→ 大装饰 → 色块 → �
 | `frameDecorations` | `tape` `stamp` `postmark` `dateStamp` `outline` `plateRim` `cornerDoodle` `tornStrip`（照片角撕纸条，每跨页最多 1 条）；`largestOnly`、`layer: 'frame'` |
 | `decorations` | `rect` `line` `text` `perforation` `gutterLine` `halftone` `airmailBorder` `checkerBorder` `fenceBorder` `route` `patternBand`（纹样页边条）`patternBlock`（纹样色块）；`rect` 可加 `pattern`；`chance`、`mirror`、`pageTypes` |
 | `doodles` | 线稿：`names` `perSpread`（没有 `ornaments` 时的数量）`size` `colors` `lineWidth` `rotate` `avoid`。同一跨页不重复 |
-| `ornaments` | 跨页装饰计划（见 `core/render/ornaments.js` 文件头）：`big` 大装饰候选（`scenery` 剪影 / `pagePattern` 整页底纹 / `patternBand` / `patternBlock` / `deco` 任意页面装饰，带 `weight`，放不下自动换下一个）；`small` 小装饰类型（`doodle` / `seal` 方印 / `passport` 护照章 / `tornStrip` 撕纸条 / `luggageTag` 行李吊牌）；`smallPerSpread`；`pageTypes` |
+| `ornaments` | 跨页装饰计划（见 `core/render/ornaments.js` 文件头）：`big` 大装饰候选（`scenery` 剪影 / `pagePattern` 整页底纹 / `patternBand` / `patternBlock` / `deco` 任意页面装饰，带 `weight`，放不下自动换下一个）；`small` 小装饰类型（`doodle` / `seal` 方印 / `passport` 护照章 / `tornStrip` 撕纸条 / `luggageTag` 行李吊牌 / `miniCard` 旅行便签）；留白页自动增加小装饰，照片密集页自动减少；`smallPerSpread`；`pageTypes` |
 | `wordPool` / `decoText` | 装饰词池（建议 20 个以上：整本书不重复，用完才重来）；`headline` `kicker` `greeting` `runningHeader` `index` 的内容和字体（`glyph: 'playfair' \| 'caveat' \| 'oswald'` 用字形路径）；`plate` 底牌、`dy` 下移 |
 | `stripPool` | 撕纸条短句（建议 20 条，整本书不重复），和「地点 · 日期」轮换 |
 | `pageNumber` | `{ show, glyph, size, color, format: 'pad2' }` |
@@ -121,6 +124,12 @@ renderPage / renderSpread     背景（+ 纹样）→ 大装饰 → 色块 → �
 | `darkVariant` | 反色跨页的深色配置（约每 5 个正文跨页一次） |
 
 3. 变量：`{title} {location} {date} {year} {month} {word}`，任一为空整条不显示。西文用字形路径画（`uppercase` 只作用于西文），中文用系统字体；中西文混排的长标题请分行（见海边明信片的 `greeting.lines`）。
+
+### 当前主题模板
+
+模板页按适合内容的标签筛选主题模板：海边明信片、自然风光、美食餐桌、动物园农场、公路旅行、人文建筑、文艺复兴、现代都市、猫猫日记、狗狗散步、心动同行、亲子时光。猫狗模板共用「萌宠」筛选，情侣和家庭模板也可同时出现在适合的目的地标签下。
+
+模板使用 Canvas 代码绘制的线稿、纹样和装饰，不依赖网络图片。照片通过统一的照片框裁切流程绘制；中文使用系统字体，英文装饰标题使用项目内字形路径，渲染前加载，加载失败时仍可回退系统字体。
 
 ## 4. 如何新增版式
 
