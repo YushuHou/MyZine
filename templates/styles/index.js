@@ -13,8 +13,8 @@ module.exports = [].concat(
     require('./hkretro'),
     require('./japanese'),
     require('./mono'),
-    // 主题
-    require('./postcard'),
+    // 主题（大海沙滩起使用图片素材分包；原「海边明信片」已并入大海沙滩）
+    require('./beach'),
     require('./nature'),
     require('./food'),
     require('./farm'),

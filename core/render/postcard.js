@@ -4,6 +4,7 @@ const { drawGlyphText, measureGlyphText, transformText } = require('./glyphText'
 const { drawDoodle } = require('./doodles')
 const { hashRandom } = require('./frames')
 const { formatDate } = require('../bookInfo')
+const { packImage } = require('./stickers')
 
 function colorOf(style, value, fallback) {
   return (value && style.colors[value]) || value || fallback
@@ -45,12 +46,13 @@ function drawArcText(ctx, spec, text, cx, cy, r, position, color) {
 }
 
 /**
- * 邮票框：白色锯齿边 + 内框底色 + 一个小线稿，压在照片右上角
- * stamp: { w, h（基准 px）, inset（离照片右上角）, fill（内框色）, doodles: [...], doodleColor }
+ * 邮票框：白色锯齿边 + 内框底色 + 一个小线稿（或素材分包里的贴纸），压在照片右上角
+ * stamp: { w, h（基准 px）, inset（离照片右上角）, fill（内框色）, doodles: [...], doodleColor, stickers: [...]（素材贴纸名，优先于线稿）}
+ * @param images 图片表（邮票里画贴纸时用）
  * @param rect 照片框外形区域（画布 px），坐标系已按照片框旋转
  * @returns 邮票区域（画布 px），供邮戳定位
  */
-function drawStamp(ctx, style, d, rect, unit, seed) {
+function drawStamp(ctx, style, d, rect, unit, seed, images) {
   const w = (d.w || 116) * unit
   const h = (d.h || 140) * unit
   const inset = (d.inset || 22) * unit
@@ -87,6 +89,15 @@ function drawStamp(ctx, style, d, rect, unit, seed) {
   const pad = 10 * unit
   ctx.fillStyle = colorOf(style, d.fill, '#D6E8F0')
   ctx.fillRect(x + pad, y + pad, w - pad * 2, h - pad * 2)
+  // 贴纸：等比缩进内框（留一圈底色）
+  const sticker = d.stickers && packImage(images, d.stickers[Math.floor(hashRandom(`${seed}:stamp`) * d.stickers.length)])
+  if (sticker) {
+    const bw = w - pad * 3
+    const bh = h - pad * 3
+    const k = Math.min(bw / sticker.width, bh / sticker.height)
+    ctx.drawImage(sticker, x + (w - sticker.width * k) / 2, y + (h - sticker.height * k) / 2, sticker.width * k, sticker.height * k)
+    return { x, y, w, h }
+  }
   const names = d.doodles || ['sun']
   const name = names[Math.floor(hashRandom(`${seed}:stamp`) * names.length)]
   drawDoodle(ctx, name, x + w / 2, y + h / 2, Math.min(w, h) * 0.55, {

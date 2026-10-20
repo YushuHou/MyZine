@@ -32,16 +32,21 @@ function isBleed(frame) {
  */
 function resolveFrames(frames, style, seedKey) {
   const pf = style.photoFrame || {}
+  // tornEdge 依赖本文件的 hashRandom，在函数内引用以避免循环依赖
+  const { tornSpecOf } = require('./tornEdge')
   return frames.map(f => {
     const bleed = isBleed(f)
     // 满版、以及版式标了 border: false 的框（如四格条，由版式组合成一个整体）不随风格倾斜
     const jitter = !bleed && f.border !== false && pf.rotateJitter ? (hashRandom(`${seedKey}:${f.id}`) * 2 - 1) * pf.rotateJitter : 0
-    return Object.assign({}, f, {
+    const resolved = Object.assign({}, f, {
       shape: f.shape || 'rect',
       rotate: (f.rotate || 0) + jitter,
       bleed,
       framed: !bleed && f.border !== false
     })
+    // 撕纸边（阶段 8a）：不画白边，由 tornEdge.js 画纸芯和投影
+    resolved.torn = tornSpecOf(resolved, style, seedKey)
+    return resolved
   })
 }
 
@@ -51,6 +56,7 @@ function borderOf(frame, style) {
   if (frame.mat) {
     return { width: frame.mat.border || 0, color: frame.mat.color || '#FFFFFF', bottomExtra: 0, shadow: frame.mat.shadow ? (pf.shadow || DEFAULT_SHADOW) : null }
   }
+  if (frame.torn) return { width: 0, color: null, bottomExtra: 0, shadow: null }
   if (!frame.framed) return { width: 0, color: null, bottomExtra: 0, shadow: frame.bleed ? null : pf.shadow }
   // 拍立得加宽底边、票根副券只用于矩形类
   const rectLike = frame.shape === 'rect' || frame.shape === 'rounded'

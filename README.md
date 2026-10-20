@@ -65,8 +65,10 @@ templates/                          模板数据（新增风格 / 版式 / 线�
   doodles/      线稿路径数据
   themes.js     12 个主题标签
 pkg-fonts/      分包：MZ Playfair / MZ Caveat / MZ Oswald 字形数据 + 字体授权页
+pkg-beach/      分包：「大海沙滩」图片素材（贴纸、纸胶带、便签纸、纸纹，Data URL 写在 assets.js 中，脚本生成）
+图片素材/        AI 生成的素材原图（不进小程序包，由 scripts/build-stickers.py 处理）
 dev/            分包（开发用，提审前移除）：素材与滤镜验证页、线稿与字形预览页
-scripts/        build-glyphs.py（生成字形数据，不进小程序包）
+scripts/        build-glyphs.py（生成字形数据）、build-stickers.py + packs/*.json（处理图片素材），均不进小程序包
 licenses/fonts/ OFL 授权全文（不进小程序包）
 docs/           需求文档、阶段方案（不进小程序包）
 ```
@@ -108,19 +110,31 @@ renderPage / renderSpread     背景（+ 纹样）→ 大装饰 → 色块 → �
 | `fonts` | 封面 / 扉页文字块的角色字体：`title` `subtitle` `body` `caption`（系统字体） |
 | `background` | `{ type: 'color' }` / `{ type: 'texture', texture: 'paper' \| 'kraft' \| 'newsprint' }`；可加 `pattern: { name, color, alpha, cell }` 整页低对比度纹样 |
 | `grain` / `pagePalette` | 颗粒感；底色在跨页间轮换（左右页可不同） |
-| `photoFrame` | `borderWidth` `borderColor` `bottomExtra`（拍立得）`shadow` `rotateJitter` `backing`（撕边垫纸）`ticketStub`（票根） |
+| `assetPack` | 图片素材分包名（见第 3.1 节）；背景、图片装饰写 `'pack:素材名'`，贴纸等写素材名 |
+| `photoFrame` | `borderWidth` `borderColor` `bottomExtra`（拍立得）`shadow` `rotateJitter` `backing`（撕边垫纸）`ticketStub`（票根）`torn`（撕纸边照片：`chance` `minArea` `depth` `jag` `fiber`） |
 | `photoFilter` | `[{ type: 'grayscale' }, { type: 'tint', color, mode, alpha }, { type: 'lightLeak' }]` |
-| `frameDecorations` | `tape` `stamp` `postmark` `dateStamp` `outline` `plateRim` `cornerDoodle` `tornStrip`（照片角撕纸条，每跨页最多 1 条）；`largestOnly`、`layer: 'frame'` |
+| `frameDecorations` | `tape`（加 `images` 用纸胶带图片）`frameSticker`（照片角贴纸，每跨页最多 1 张）`stamp`（`stickers` 时邮票里画贴纸） `postmark` `dateStamp` `outline` `plateRim` `cornerDoodle` `tornStrip`（照片角撕纸条，每跨页最多 1 条）；`largestOnly`、`layer: 'frame'` |
 | `decorations` | `rect` `line` `text` `perforation` `gutterLine` `halftone` `airmailBorder` `checkerBorder` `fenceBorder` `route` `patternBand`（纹样页边条）`patternBlock`（纹样色块）；`rect` 可加 `pattern`；`chance`、`mirror`、`pageTypes` |
 | `doodles` | 线稿：`names` `perSpread`（没有 `ornaments` 时的数量）`size` `colors` `lineWidth` `rotate` `avoid`。同一跨页不重复 |
-| `ornaments` | 跨页装饰计划（见 `core/render/ornaments.js` 文件头）：`big` 大装饰候选（`scenery` 剪影 / `pagePattern` 整页底纹 / `patternBand` / `patternBlock` / `deco` 任意页面装饰，带 `weight`，放不下自动换下一个）；`small` 小装饰类型（`doodle` / `seal` 方印 / `passport` 护照章 / `tornStrip` 撕纸条 / `luggageTag` 行李吊牌）；`smallPerSpread`；`pageTypes` |
+| `ornaments` | 跨页装饰计划（见 `core/render/ornaments.js` 文件头）：`big` 大装饰候选（`scenery` 剪影 / `pagePattern` 整页底纹 / `patternBand` / `patternBlock` / `deco` 任意页面装饰 / `wash` 水彩晕染 / `paperBand` 跨中缝撕纸色带，带 `weight`，放不下自动换下一个；`bigPerSpread` 每跨页几个）；`small` 小装饰类型（`doodle` / `seal` 方印 / `passport` 护照章 / `tornStrip` 撕纸条 / `luggageTag` 行李吊牌 / `sticker` 素材贴纸 / `note` 素材便签纸）；`smallPerSpread`，或 `smallByCoverage` 按照片覆盖率定数量；`tones` 跨页主色调；`stickerGroups` 贴纸主题组；`anchorChance` 贴纸贴在照片角上的比例；`pageTypes` |
+| `frameAccents` | 本页最大照片上的点睛装饰每跨页选一种：`{ postal: 1, sticker: 2 }`，对应照片框装饰的 `accent` 键，只出现在一页上 |
 | `wordPool` / `decoText` | 装饰词池（建议 20 个以上：整本书不重复，用完才重来）；`headline` `kicker` `greeting` `runningHeader` `index` 的内容和字体（`glyph: 'playfair' \| 'caveat' \| 'oswald'` 用字形路径）；`plate` 底牌、`dy` 下移 |
 | `stripPool` | 撕纸条短句（建议 20 条，整本书不重复），和「地点 · 日期」轮换 |
 | `pageNumber` | `{ show, glyph, size, color, format: 'pad2' }` |
 | `layoutWeights` | 偏好版式：`{ 版式 id: 倍数 }`，≥ 2 时方框按完全匹配计分 |
 | `darkVariant` | 反色跨页的深色配置（约每 5 个正文跨页一次） |
 
-3. 变量：`{title} {location} {date} {year} {month} {word}`，任一为空整条不显示。西文用字形路径画（`uppercase` 只作用于西文），中文用系统字体；中西文混排的长标题请分行（见海边明信片的 `greeting.lines`）。
+3. 变量：`{title} {location} {date} {year} {month} {word}`，任一为空整条不显示。西文用字形路径画（`uppercase` 只作用于西文），中文用系统字体；中西文混排的长标题请分行（见大海沙滩的 `greeting.lines`）。
+
+### 3.1 图片素材分包（阶段 8a 起）
+
+画布读不到分包里的图片文件，所以图片素材转成 Data URL 写进分包 JS 模块，渲染前用 `require.async` 加载，只解码当前跨页用到的图片。
+
+1. 用 AI 生成合集图：**纯浅灰底（#C8C8C8）**，2 行 × 3 列，物件互不接触、不碰画面边缘，不要白描边和文字（提示词见 `docs/plans/阶段8a-大海沙滩试点.md` 第 5 节）。原图放进 `图片素材/主题名/`。
+2. 写配置 `scripts/packs/xxx.json`：每张图的文件、类型（`sticker` 贴纸自动加白描边 / `paper` 纸胶带便签纸 / `texture` 背景纸纹）、网格和每格的素材名（`null` 跳过该格）。
+3. 运行 `python -I scripts/build-stickers.py scripts/packs/xxx.json --preview 输出目录`：生成 `pkg-xxx/assets.js`，打印每个素材的大小，并输出检查拼图。分包上限 2MB，脚本默认预算 1900KB。
+4. 在 `app.json` 的 `subpackages` 中加 `{ "root": "pkg-xxx", "name": "xxx", "pages": [] }`，在 `core/render/assetPacks.js` 的 `LOADERS` 中加一行（`require.async` 路径必须是字面量）。
+5. 风格文件写 `assetPack: 'xxx'`，再用素材名配置贴纸、纸胶带、便签纸和背景（参考 `templates/styles/beach.js`）。分包加载失败时，素材不画，胶带退回代码绘制。
 
 ## 4. 如何新增版式
 

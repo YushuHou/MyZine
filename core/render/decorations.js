@@ -7,6 +7,7 @@ const { drawOutline, drawHalftone } = require('./paperCraft')
 const { drawPlateRim, drawCornerDoodle, drawCheckerBorder, drawFenceBorder, drawRoute } = require('./themeDeco')
 const { fillPattern, drawPatternBand, drawPatternBlock } = require('./patterns')
 const { drawFrameStrip } = require('./paperBits')
+const { drawFrameSticker, drawImageTape } = require('./stickers')
 
 // 风格颜色：可写 colors 中的键名，也可直接写颜色值
 function colorOf(style, value, fallback) {
@@ -238,6 +239,8 @@ function drawPerforation(ctx, style, d, W, H, unit) {
 /**
  * 照片框装饰（画在照片上面，坐标系已按照片框旋转）
  * - tape 和纸胶带：{ colors, width, height, angleJitter, placement: 'top' | 'corners' }
+ *     有 images（素材分包里的纸胶带图）时用图片，高度按图片比例；alpha 图片透明度
+ * - frameSticker 照片角贴纸：装饰计划分好名字和位置，每跨页最多 1 张，见 stickers.js
  * - stamp 邮票框 / postmark 邮戳圆环（明信片）：largestOnly 时只画在本页最大的照片框上；minWidth 小于它的框不画
  * - outline 霓虹描边：{ color, width, offset, glow }
  * - plateRim 餐盘沿（圆形框）、cornerDoodle 照片角线稿（见 themeDeco.js）
@@ -248,7 +251,8 @@ function drawPerforation(ctx, style, d, W, H, unit) {
  * @param rect   照片框外形区域（画布 px）{ x, y, w, h }
  * @param seed   随机种子
  * @param ctxInfo { info: 书籍信息, isLargest: 是否为本页最大的照片框,
- *                  names: 装饰计划分好的线稿名 { stamp, corner }（null 表示本跨页没有可用的线稿，不画）}
+ *                  names: 装饰计划分好的线稿名 { stamp, corner }（null 表示本跨页没有可用的线稿，不画），
+ *                  以及 sticker（本页的照片角贴纸）；images: 图片表（素材分包图片）}
  */
 function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {}) {
   // 满版、不加边框的框（如四格条）不贴胶带等装饰
@@ -262,8 +266,16 @@ function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {})
     // 邮票、邮戳只贴在矩形照片上（圆形、拱形的外接方框角上是空的）
     if ((d.type === 'stamp' || d.type === 'postmark') && frame.shape !== 'rect' && frame.shape !== 'rounded') return
     const names = ctxInfo.names || {}
-    if (d.type === 'tape') drawTapes(ctx, d, rect, unit, seed)
-    else if (d.type === 'stamp') stampRect = drawStamp(ctx, style, names.stamp ? Object.assign({}, d, { doodles: [names.stamp] }) : d, rect, unit, seed)
+    // 点睛装饰（accent）：只画本跨页选中的那一种，且只在选中的那一页
+    if (d.accent && names.accent !== d.accent) return
+    if (d.type === 'tape') drawTapes(ctx, d, rect, unit, seed, ctxInfo.images)
+    else if (d.type === 'frameSticker') {
+      if (names.sticker && ctxInfo.isLargest) drawFrameSticker(ctx, ctxInfo.images, d, names.sticker, rect, unit)
+    }
+    else if (d.type === 'stamp') {
+      const picked = names.stamp ? Object.assign({}, d, d.stickers ? { stickers: [names.stamp] } : { doodles: [names.stamp] }) : d
+      stampRect = drawStamp(ctx, style, picked, rect, unit, seed, ctxInfo.images)
+    }
     else if (d.type === 'postmark') {
       // 没有邮票时，邮戳压在照片右上角（position: 'top-left' 时在左上角，如票根的副券在右侧）
       const R = (d.r || 74) * unit
@@ -280,10 +292,12 @@ function drawFrameDecorations(ctx, style, frame, rect, unit, seed, ctxInfo = {})
   })
 }
 
-function drawTapes(ctx, d, rect, unit, seed) {
+function drawTapes(ctx, d, rect, unit, seed, images) {
   const r = k => hashRandom(`${seed}:tape:${k}`)
   const colors = d.colors || ['rgba(230, 200, 160, 0.75)']
   const color = colors[Math.floor(r('c') * colors.length)]
+  const tapeImages = d.images || []
+  const tapeImage = tapeImages[Math.floor(r('img') * tapeImages.length)]
   const w = (d.width || 160) * unit
   const h = (d.height || 44) * unit
   const jitter = d.angleJitter == null ? 8 : d.angleJitter
@@ -295,7 +309,8 @@ function drawTapes(ctx, d, rect, unit, seed) {
     ctx.save()
     ctx.translate(s.x, s.y)
     ctx.rotate((s.angle + (r(`a${i}`) * 2 - 1) * jitter) * Math.PI / 180)
-    drawTapeShape(ctx, w, h, color, unit)
+    // 素材图片缺失（分包加载失败）时退回代码画的胶带
+    if (!tapeImage || !drawImageTape(ctx, images, tapeImage, w, d.alpha)) drawTapeShape(ctx, w, h, color, unit)
     ctx.restore()
   })
 }

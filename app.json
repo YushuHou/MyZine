@@ -13,6 +13,11 @@
       "root": "pkg-fonts",
       "name": "fonts",
       "pages": ["license/license"]
+    },
+    {
+      "root": "pkg-beach",
+      "name": "beach",
+      "pages": []
     }
   ],
   "window": {

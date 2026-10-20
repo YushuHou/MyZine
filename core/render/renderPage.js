@@ -10,6 +10,7 @@ const { drawBackground, pageColorOf, pageBaseColor, drawBlocks, drawGrain, drawD
 const { drawSlots, drawRunningHeader, drawPhotoIndex } = require('./decoText')
 const { planOrnaments, drawBigOrnament, drawSmallOrnaments } = require('./ornaments')
 const { drawGlyphText, measureGlyphText } = require('./glyphText')
+const { drawTornPhoto } = require('./tornEdge')
 
 // 编辑时选中照片框的高亮色（界面元素，不属于风格，见 core/uiColors.js）
 const SELECTION_COLOR = require('../uiColors').selection
@@ -57,19 +58,27 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
   drawBlocks(ctx, style, layoutPage, W, H, unit)
   drawDecorations(ctx, style, page, W, H, unit, images, bg)
   // 照片上的邮票、照片角线稿用计划分好的线稿名
-  const names = { stamp: plan.names.stamp[page.side], corner: plan.names.corner[page.side], strip: plan.stripSide === page.side }
+  const names = {
+    stamp: plan.names.stamp[page.side],
+    corner: plan.names.corner[page.side],
+    strip: plan.stripSide === page.side,
+    // 压在照片角上的贴纸（每跨页最多 1 张）
+    sticker: plan.frameSticker && plan.frameSticker.side === page.side ? plan.frameSticker : null,
+    // 点睛装饰（邮票邮戳 / 照片角贴纸）：本页是选中的那一页时才有
+    accent: plan.accentSide === page.side ? plan.accent : null
+  }
   const largest = frames.filter(f => f.framed).reduce((best, f) => (!best || f.w * f.h > best.w * best.h ? f : best), null)
   frames.forEach(frame => {
     drawFrame(ctx, frame, page.slots[frame.id], style, images, W, H, unit, page)
     // layer: 'frame' 的装饰（如霓虹描边）跟着这张照片画，后面叠上来的照片能盖住它
     withFrameTransform(ctx, frame, W, H, rect => {
-      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, layer: 'frame', names })
+      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, layer: 'frame', names, images })
     })
   })
   // 胶带、邮票等照片框装饰在所有照片之后画，可以压住相邻照片
   frames.forEach(frame => {
     withFrameTransform(ctx, frame, W, H, rect => {
-      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, names, page })
+      drawFrameDecorations(ctx, style, frame, rect, unit, `${page.spreadId || ''}:${frame.id}`, { info: page.info, isLargest: frame === largest, names, page, images })
     })
   })
   ;(layoutPage.texts || []).forEach(block => {
@@ -80,7 +89,7 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
     .concat(drawRunningHeader(ctx, style, page, frames, W, H, unit))
   drawPhotoIndex(ctx, style, page, frames, W, H, unit)
   // 小装饰（线稿、方印、护照章）放在装饰位，避开照片、文字和大装饰
-  drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, textAreas.concat(bigAreas), bg)
+  drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, textAreas.concat(bigAreas, accentAreas(largest, names, W, H, unit)), bg, images)
   drawPageNumbers(ctx, page, layoutPage, style, W, H, unit)
   // 颗粒覆盖整页（含照片），最后画；参考线和选中框不受影响
   drawGrain(ctx, style, W, H, unit, images)
@@ -91,6 +100,24 @@ function renderPage(ctx, page, layout, style, size, images, options = {}) {
     if (frame) drawSelection(ctx, frame, W, H, unit)
   }
   ctx.restore()
+}
+
+// 点睛装饰（照片角贴纸 / 邮票邮戳）大致占的区域（忽略照片倾斜），小装饰避开
+function accentAreas(frame, names, W, H, unit) {
+  if (!frame) return []
+  const x0 = frame.x * W
+  const y0 = frame.y * H
+  const x1 = x0 + frame.w * W
+  const y1 = y0 + frame.h * H
+  if (names.sticker) {
+    const s = names.sticker.size * unit
+    const cx = names.sticker.corner.indexOf('left') >= 0 ? x0 : x1
+    const cy = names.sticker.corner.indexOf('top') >= 0 ? y0 : y1
+    return [{ x: cx - s * 0.6, y: cy - s * 0.6, w: s * 1.2, h: s * 1.2 }]
+  }
+  // 邮票在右上角内侧，邮戳压在邮票左下
+  if (names.accent === 'postal') return [{ x: x1 - 320 * unit, y: y0 - 40 * unit, w: 340 * unit, h: 320 * unit }]
+  return []
 }
 
 // 在照片框的坐标系（含旋转）中执行绘制，fn 收到照片框外形区域 { x, y, w, h }（画布 px，圆形为内切正圆）
@@ -124,7 +151,22 @@ function drawFrame(ctx, frame, slot, style, images, W, H, unit, page) {
 
   const pf = style.photoFrame || {}
   const seed = `${page.spreadId || ''}:${frame.id}`
+  // 照片区域内的内容：占位底色 → 照片 → 滤镜 → 日期戳（调用方已裁切）
+  const paint = area => {
+    ctx.fillStyle = entry && slot.fit === 'fit' ? style.colors.fitFill : style.colors.placeholder
+    ctx.fillRect(area.x, area.y, area.w, area.h)
+    if (!entry) return
+    drawPhoto(ctx, entry, slot, area.x, area.y, area.w, area.h)
+    // 照片滤镜（黑白、叠色、漏光）只作用于照片区域
+    applyPhotoFilters(ctx, style, area, unit, seed)
+    drawDateStamp(ctx, style, area, page.info, unit)
+  }
   withFrameTransform(ctx, frame, W, H, rect => {
+    // 撕纸边照片：没有白边，撕口处露出纸芯
+    if (frame.torn) {
+      drawTornPhoto(ctx, frame.torn, inner, unit, seed, paint)
+      return
+    }
     const radius = cornerRadius(frame, style, rect.w, rect.h, unit)
     // 撕边垫纸（拼贴剪报）：画在照片下面
     if (pf.backing && frame.framed) drawTornBacking(ctx, style, pf.backing, rect, unit, seed)
@@ -147,14 +189,7 @@ function drawFrame(ctx, frame, slot, style, images, W, H, unit, page) {
     ctx.save()
     shapePath(ctx, frame.shape, inner.x, inner.y, inner.w, inner.h, hasBorder ? Math.max(0, radius - border.width * unit) : radius)
     ctx.clip()
-    ctx.fillStyle = entry && slot.fit === 'fit' ? style.colors.fitFill : style.colors.placeholder
-    ctx.fillRect(inner.x, inner.y, inner.w, inner.h)
-    if (entry) {
-      drawPhoto(ctx, entry, slot, inner.x, inner.y, inner.w, inner.h)
-      // 照片滤镜（黑白、叠色、漏光）只作用于照片区域
-      applyPhotoFilters(ctx, style, inner, unit, seed)
-      drawDateStamp(ctx, style, inner, page.info, unit)
-    }
+    paint(inner)
     ctx.restore()
     // 票根副券：撕线、缺口、ADMIT ONE 和照片编号
     if (border.stub) {

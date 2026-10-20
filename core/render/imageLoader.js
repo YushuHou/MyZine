@@ -75,6 +75,7 @@ function createImageLoader(canvas) {
     /**
      * 加载一组照片，返回 { photoId: { image, exif, transform } }，加载失败的照片不在结果中
      * options.evictOthers：释放不在本组中的已缓存图片，控制内存（编辑页翻页时使用）
+     * options.keep：释放时额外保留的路径（本次同时加载的素材分包图片）
      */
     async loadPhotos(photos, variant = 'display', options = {}) {
       const map = {}
@@ -85,21 +86,23 @@ function createImageLoader(canvas) {
       if (options.evictOthers) {
         const keep = {}
         photos.forEach(p => { keep[pathOf(p, variant)] = true })
+        ;(options.keep || []).forEach(path => { keep[path] = true })
         Object.keys(cache).forEach(path => { if (!keep[path] && !pinned[path]) release(path) })
       }
       return map
     },
 
     /**
-     * 加载风格素材（背景纹理、装饰图、颗粒），常驻缓存
+     * 加载风格素材（背景纹理、装饰图、颗粒），默认常驻缓存
      * @param assets { key: 路径 }
+     * @param options.pin 是否常驻（默认 true）；素材分包图片传 false，换跨页时可随照片释放
      * @returns { key: { image } }，加载失败的不在结果中
      */
-    async loadAssets(assets) {
+    async loadAssets(assets, options = {}) {
       const map = {}
       await Promise.all(Object.keys(assets).map(async key => {
         const path = assets[key]
-        pinned[path] = true
+        if (options.pin !== false) pinned[path] = true
         const image = await loadImage(path)
         if (image) map[key] = { image, exif: 'up', transform: false }
       }))

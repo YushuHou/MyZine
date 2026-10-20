@@ -26,6 +26,10 @@
       {
         "type": "folder",
         "value": "dev"
+      },
+      {
+        "type": "folder",
+        "value": "图片素材"
       }
     ],
     "include": []

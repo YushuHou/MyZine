@@ -1,0 +1,32 @@
+{
+  "pack": "beach",
+  "out": "pkg-beach/assets.js",
+  "budgetKB": 1900,
+  "defaults": { "maxSide": 520, "outline": 12, "outlineClose": 10, "colors": 256 },
+  "sources": [
+    {
+      "file": "图片素材/海边/ChatGPT 图像 2026年10月20日 16_59_36.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["seagull", "scallop", "starfish", "lifebuoy", "umbrella", "sailboat"]
+    },
+    {
+      "file": "图片素材/海边/ChatGPT 图像 2026年10月20日 17_01_54.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["lighthouse", "palm", "rowboat", "surfboard", "strawHat", "flipflops"]
+    },
+    {
+      "file": "图片素材/海边/ChatGPT 图像 2026年10月20日 17_04_53.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["gulls", "conch", null, "icecream", "bucket", "wave"]
+    },
+    {
+      "file": "图片素材/海边/ChatGPT 图像 2026年10月20日 17_05_51.png",
+      "kind": "paper", "grid": [2, 3], "maxSide": 640,
+      "names": ["tapeStripe", "tapeDot", "tapePlain", "noteGrid", "noteLined", "clip"]
+    },
+    {
+      "file": "图片素材/海边/ChatGPT 图像 2026年10月20日 17_06_37.png",
+      "kind": "texture", "name": "paper", "size": 1024, "quality": 80
+    }
+  ]
+}

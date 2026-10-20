@@ -9,12 +9,21 @@
 //     { type: 'patternBand', name, edges, width, offset, fill, color, alpha, cell, weight },   // 纹样页边条
 //     { type: 'patternBlock', name, x, y, w, h, fill, color, alpha, cell, weight },           // 纹样色块（左右页随机一侧，右页镜像）
 //     { type: 'deco', deco: { …页面装饰… }, weight }                                          // 任意页面装饰（如格纹桌布页边）
+//     { type: 'wash', colors, alpha, size: [0.4, 0.6], weight }                                // 水彩晕染（衬在最大照片的一角下面）
 //   ],
 //   small: [{ type: 'doodle', weight }, { type: 'seal', size: [110, 150], color, weight }, { type: 'passport', size: [140, 180], count: [1, 3], colors, weight },
-//           { type: 'tornStrip', size: [240, 340], paper, height, font, text, weight }（撕纸条）, { type: 'luggageTag', size: [260, 320], paper, band, string, weight }（行李吊牌）],
+//           { type: 'tornStrip', size: [240, 340], paper, height, font, text, weight }（撕纸条）, { type: 'luggageTag', size: [260, 320], paper, band, string, weight }（行李吊牌）,
+//           { type: 'sticker', names, size: [180, 300], rotate, weight }（素材贴纸，同一跨页不重复）,
+//           { type: 'note', images, size, clip, clipChance, font, text, weight }（素材便签纸，每跨页最多 1 张）],
+//   bigPerSpread: [1, 2],             // 可选：每跨页大装饰数量（默认 1）；同一种不会重复
 //   smallPerSpread: [2, 3],
+//   smallByCoverage: [[0.35, [5, 6]], [0.55, [3, 4]], [1, [2, 3]]],  // 可选：按照片覆盖率决定小装饰数量（覆盖率 < 阈值时用对应区间），优先于 smallPerSpread
+//   tones: ['accent', 'teal'],        // 可选：跨页主色调，晕染、撕纸色带都用它，左右页一致
+//   stickerGroups: [[…], […]],        // 可选：贴纸分主题，每个跨页优先从一组里挑
+//   anchorChance: 0.6,                // 可选：贴纸优先贴在照片角上的比例
 //   pageTypes: ['body']
 // }
+// 风格 frameAccents: { postal: 1, sticker: 2 }：本页最大照片上的点睛装饰每跨页只出现一种（带 accent 键的照片框装饰），只在一页上
 // 没写 ornaments 的风格：没有大装饰，小装饰只有线稿（数量取 doodles.perSpread），但同样不重复
 const { hashRandom } = require('./frames')
 const { getLayoutPage } = require('../registry')
@@ -24,6 +33,9 @@ const { drawPattern, fillPattern, drawPatternBand, drawPatternBlock } = require(
 const { sealChars, drawSeal, sealRadius, drawPassportStamps, passportRadius } = require('./seals')
 const { drawDecoration } = require('./decorations')
 const { drawTornStrip, drawLuggageTag, pickStripText } = require('./paperBits')
+const { drawSticker, drawNote } = require('./stickers')
+const { drawPageWash } = require('./wash')
+const { drawPaperBand } = require('./paperBand')
 
 const cache = {}
 let cacheSize = 0
@@ -115,6 +127,17 @@ function overlapRatio(rect, frames) {
   }, 0) / area
 }
 
+// 每一侧页面的照片覆盖率（照片框面积之和 ÷ 页面面积，重叠不扣除，最多 1）
+function coverageOf(layout, sides) {
+  const out = {}
+  sides.forEach(side => {
+    const frames = getLayoutPage(layout, side).frames
+    // 跨页大图的坐标按整个跨页算，面积占比不受影响
+    out[side] = Math.min(1, frames.reduce((s, f) => s + f.w * f.h, 0))
+  })
+  return out
+}
+
 // 试着把一个大装饰候选落到这个跨页上；放不下返回 null
 function buildBig(cand, layout, sides, rnd) {
   if (cand.type === 'scenery') {
@@ -128,6 +151,26 @@ function buildBig(cand, layout, sides, rnd) {
       height: fit.height,
       skip: fit.skip
     }
+  }
+  if (cand.type === 'paperBand') {
+    // 色带在 y 范围内找一个「半压在照片下」的高度：被照片挡住的比例最接近 cover（默认 35%）
+    const [ymin, ymax] = cand.y || [0.2, 0.8]
+    const [hmin, hmax] = cand.height || [0.16, 0.26]
+    const height = hmin + rnd('band:h') * (hmax - hmin)
+    const frames = []
+    sides.forEach(side => getLayoutPage(layout, side).frames.forEach(f => {
+      // 换算到整个跨页的坐标（宽为 1）
+      if (side === 'full') frames.push(f)
+      else frames.push({ x: (side === 'right' ? 0.5 : 0) + f.x / 2, y: f.y, w: f.w / 2, h: f.h })
+    }))
+    const target = cand.cover == null ? 0.35 : cand.cover
+    let best = null
+    for (let i = 0; i <= 8; i++) {
+      const y = ymin + (ymax - ymin) * i / 8
+      const score = Math.abs(overlapRatio({ x: 0, y: y - height / 2, w: 1, h: height }, frames) - target) + rnd(`band:y:${i}`) * 0.08
+      if (!best || score < best.score) best = { y, score }
+    }
+    return { cfg: cand, y: best.y, height }
   }
   if (cand.type === 'pagePattern') {
     const names = cand.names || [cand.name]
@@ -150,9 +193,11 @@ function buildBig(cand, layout, sides, rnd) {
 
 /**
  * 某个跨页的装饰计划（缓存）
- * @returns { big: { cfg, … } | null, small: { side: [item] }, names: { stamp: { side }, corner: { side } }, stripSide }
+ * @returns { big: { cfg, … } | null（第一个大装饰）, bigs: [所有大装饰], small: { side: [item] }, names: { stamp: { side }, corner: { side } }, stripSide }
  *   stripSide：照片角撕纸条画在哪一页（每跨页最多 1 条），没有时为 null
- *   item：{ type: 'doodle', name } | { type: 'seal', cfg, size } | { type: 'passport', cfg, size, count }（size 为基准 px）
+ *   frameSticker：压在照片角上的贴纸 { side, name, corner, size, angle, cfg }，没有时为 null
+ *   item：{ type: 'doodle', name } | { type: 'seal', cfg, size } | { type: 'passport', cfg, size, count }
+ *         | { type: 'sticker', cfg, name, size } | { type: 'note', cfg, image, clip, size }（size 为基准 px）
  */
 function planOrnaments(style, page, layout) {
   const spreadId = page.spreadId || ''
@@ -163,8 +208,28 @@ function planOrnaments(style, page, layout) {
   const sides = sidesOf(layout)
   const cfg = style.ornaments
   const doodleCfg = style.doodles || {}
-  const plan = { big: null, small: {}, names: { stamp: {}, corner: {} }, stripSide: null }
+  const plan = { big: null, bigs: [], small: {}, names: { stamp: {}, corner: {} }, stripSide: null, frameSticker: null, tone: null, accent: null, accentSide: null }
   sides.forEach(s => { plan.small[s] = [] })
+  // 跨页主色调：左右页的晕染、色带同色
+  const tones = cfg && cfg.tones
+  if (tones && tones.length) plan.tone = tones[Math.floor(rnd('tone') * tones.length)]
+  // 点睛装饰：本跨页用哪一种、放在哪一页
+  const accents = style.frameAccents
+  if (accents) {
+    const keys = Object.keys(accents)
+    plan.accent = keys[pickWeighted(keys.map(k => ({ weight: accents[k] })), rnd, 'accent')]
+    plan.accentSide = sides[Math.floor(rnd('accent:side') * sides.length)]
+  }
+  // 贴纸名：照片角贴纸、邮票里的贴纸和留白处的贴纸共用，同一跨页不重复；有分组时先从本跨页的主题组里挑
+  const groups = (cfg && cfg.stickerGroups) || []
+  const group = groups.length ? groups[Math.floor(rnd('sgroup') * groups.length)] : []
+  const usedSticker = {}
+  const takeSticker = (names, k) => {
+    const list = shuffled(names || [], rnd, k)
+    const name = list.filter(n => group.indexOf(n) >= 0).concat(list).find(n => !usedSticker[n])
+    if (name) usedSticker[name] = true
+    return name || null
+  }
 
   // 本跨页的线稿名：洗牌后不放回地取
   const used = {}
@@ -175,7 +240,9 @@ function planOrnaments(style, page, layout) {
   }
   // 照片上的邮票、照片角线稿先占名字
   ;(style.frameDecorations || []).forEach(fd => {
-    if (fd.type === 'stamp' && fd.doodles) sides.forEach(s => { plan.names.stamp[s] = take(fd.doodles, `stamp:${s}`) })
+    // 邮票里画贴纸（stickers）或线稿（doodles）
+    if (fd.type === 'stamp' && fd.stickers) sides.forEach(s => { plan.names.stamp[s] = takeSticker(fd.stickers, `stamp:${s}`) })
+    else if (fd.type === 'stamp' && fd.doodles) sides.forEach(s => { plan.names.stamp[s] = take(fd.doodles, `stamp:${s}`) })
     if (fd.type === 'cornerDoodle') sides.forEach(s => { plan.names.corner[s] = take(fd.names || ['branch'], `corner:${s}`) })
     // 照片角撕纸条：按 chance 出现，随机选一页
     if (fd.type === 'tornStrip' && rnd('strip:on') < (fd.chance == null ? 1 : fd.chance)) {
@@ -187,18 +254,41 @@ function planOrnaments(style, page, layout) {
   const pageTypes = (cfg && cfg.pageTypes) || doodleCfg.pageTypes
   const active = !pageTypes || pageTypes.indexOf(page.pageType) >= 0
   if (active) {
-    // 大装饰：按权重依次尝试，直到有一个放得下
+    // 照片角贴纸：按 chance 出现，随机选一页、一个角
+    const fs = (style.frameDecorations || []).find(fd => fd.type === 'frameSticker')
+    const fsOn = fs && (fs.accent ? plan.accent === fs.accent : rnd('fsticker:on') < (fs.chance == null ? 1 : fs.chance))
+    if (fsOn) {
+      const corners = fs.corners || ['top-right', 'bottom-left', 'bottom-right']
+      const name = takeSticker(fs.names, 'fsticker')
+      if (name) {
+        plan.frameSticker = {
+          cfg: fs,
+          side: fs.accent ? plan.accentSide : sides[Math.floor(rnd('fsticker:side') * sides.length)],
+          name,
+          corner: corners[Math.floor(rnd('fsticker:corner') * corners.length)],
+          size: between(fs.size || [150, 210], rnd('fsticker:size')),
+          angle: (rnd('fsticker:angle') * 2 - 1) * (fs.rotate == null ? 12 : fs.rotate)
+        }
+      }
+    }
+    // 大装饰：按权重依次尝试，直到放下 bigPerSpread 个（默认 1 个）
     if (cfg && cfg.big && cfg.big.length) {
+      const want = intBetween(cfg.bigPerSpread || [1, 1], rnd('big:n'))
       const left = cfg.big.slice()
-      for (let i = 0; left.length && !plan.big; i++) {
+      for (let i = 0; left.length && plan.bigs.length < want; i++) {
         const idx = pickWeighted(left, rnd, `big:${i}`)
-        plan.big = buildBig(left[idx], layout, sides, rnd)
+        const big = buildBig(left[idx], layout, sides, rnd)
+        if (big) plan.bigs.push(big)
         left.splice(idx, 1)
       }
+      plan.big = plan.bigs[0] || null
     }
     // 小装饰
     const types = cfg ? (cfg.small || []) : (doodleCfg.names ? [{ type: 'doodle' }] : [])
-    const range = cfg ? (cfg.smallPerSpread || [2, 3]) : (doodleCfg.perSpread || [2, 3])
+    const coverage = coverageOf(layout, sides)
+    const avgCoverage = sides.reduce((s, side) => s + coverage[side], 0) / sides.length
+    const byCoverage = cfg && cfg.smallByCoverage && cfg.smallByCoverage.find(([limit]) => avgCoverage < limit)
+    const range = byCoverage ? byCoverage[1] : cfg ? (cfg.smallPerSpread || [2, 3]) : (doodleCfg.perSpread || [2, 3])
     const quota = intBetween(range, rnd('small:n'))
     const items = []
     let sealDone = !sealChars(location)
@@ -206,9 +296,12 @@ function planOrnaments(style, page, layout) {
     // 撕纸条、行李吊牌每跨页最多 1 个；风格已有照片角撕纸条时不再放留白处的纸条
     let stripDone = frameStrip
     let tagDone = false
+    let noteDone = false
     for (let i = 0; i < quota; i++) {
       const avail = types.filter(t =>
         (t.type === 'doodle' && (doodleCfg.names || []).some(n => !used[n])) ||
+        (t.type === 'sticker' && (t.names || []).some(n => !usedSticker[n])) ||
+        (t.type === 'note' && !noteDone) ||
         (t.type === 'seal' && !sealDone) ||
         (t.type === 'passport' && !passportDone) ||
         (t.type === 'tornStrip' && !stripDone) ||
@@ -216,7 +309,19 @@ function planOrnaments(style, page, layout) {
       if (!avail.length) break
       const t = avail[pickWeighted(avail, rnd, `small:type:${i}`)]
       if (t.type === 'doodle') items.push({ type: 'doodle', name: take(doodleCfg.names, `doodle:${i}`) })
-      else if (t.type === 'seal') {
+      else if (t.type === 'sticker') {
+        items.push({ type: 'sticker', cfg: t, name: takeSticker(t.names, `sticker:${i}`), size: between(t.size || [180, 300], rnd(`sticker:size:${i}`)) })
+      } else if (t.type === 'note') {
+        noteDone = true
+        const imgs = t.images || []
+        items.push({
+          type: 'note',
+          cfg: t,
+          image: imgs[Math.floor(rnd(`note:img:${i}`) * imgs.length)],
+          clip: t.clip && rnd(`note:clip:${i}`) < (t.clipChance == null ? 0.5 : t.clipChance) ? t.clip : null,
+          size: between(t.size || [240, 300], rnd(`note:size:${i}`))
+        })
+      } else if (t.type === 'seal') {
         sealDone = true
         items.push({ type: 'seal', cfg: t, size: between(t.size || [110, 150], rnd(`seal:size:${i}`)) })
       } else if (t.type === 'tornStrip') {
@@ -230,10 +335,13 @@ function planOrnaments(style, page, layout) {
         items.push({ type: 'passport', cfg: t, size: between(t.size || [140, 180], rnd(`pp:size:${i}`)), count: intBetween(t.count || [1, 3], rnd(`pp:count:${i}`)) })
       }
     }
-    // 分到左右页
+    // 分到左右页：按覆盖率时留白多的那页多放，否则平分
     const order = shuffled(items.map((it, i) => i), rnd, 'small:order')
     if (sides.length === 2) {
-      const leftCount = Math.floor(items.length / 2) + (rnd('small:split') < 0.5 ? items.length % 2 : 0)
+      const freeL = 1 - coverage.left
+      const freeR = 1 - coverage.right
+      const share = byCoverage && freeL + freeR > 0 ? freeL / (freeL + freeR) : 0.5
+      const leftCount = Math.max(0, Math.min(items.length, Math.round(items.length * share + (rnd('small:split') - 0.5) * 0.98)))
       order.forEach((idx, k) => plan.small[k < leftCount ? 'left' : 'right'].push(items[idx]))
     } else {
       order.forEach(idx => plan.small[sides[0]].push(items[idx]))
@@ -254,8 +362,10 @@ function planOrnaments(style, page, layout) {
  * @returns 大装饰占的区域（画布 px），小装饰避开
  */
 function drawBigOrnament(ctx, style, page, layout, plan, W, H, unit, images, bg) {
-  const big = plan.big
-  if (!big) return []
+  return (plan.bigs || []).reduce((areas, big) => areas.concat(drawOneBig(ctx, style, page, layout, plan, big, W, H, unit, images, bg)), [])
+}
+
+function drawOneBig(ctx, style, page, layout, plan, big, W, H, unit, images, bg) {
   const c = big.cfg
   if (c.type === 'scenery') {
     if (big.skip[page.side]) return []
@@ -271,6 +381,8 @@ function drawBigOrnament(ctx, style, page, layout, plan, W, H, unit, images, bg)
     if (big.only !== page.side) return []
     return drawPatternBlock(ctx, style, c, page, W, H, unit, bg)
   }
+  if (c.type === 'wash') return drawPageWash(ctx, style, c, page, getLayoutPage(layout, page.side).frames, W, H, unit, plan.tone)
+  if (c.type === 'paperBand') return drawPaperBand(ctx, style, c, big, page, W, H, unit, images, plan.tone)
   if (c.type === 'deco') {
     drawDecoration(ctx, style, c.deco, page, W, H, unit, images, bg)
     return []
@@ -283,7 +395,7 @@ function drawBigOrnament(ctx, style, page, layout, plan, W, H, unit, images, bg)
  * @param frames resolveFrames 之后的照片框（0–1）
  * @param avoid  要避开的区域（画布 px）
  */
-function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, bg) {
+function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, bg, images) {
   const items = plan.small[page.side] || []
   if (!items.length) return
   const cfg = style.doodles || {}
@@ -296,7 +408,8 @@ function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, b
     candidates.push({ x: h.ox + (h.mirror ? 1080 - sx : sx) * unit, y: sy * unit, key: `${h.ox}:${i}`, ox: h.ox })
   }))
   candidates.sort((a, b) => rnd(`pick:${a.key}`) - rnd(`pick:${b.key}`))
-  const blocked = frames.map(f => ({ x: f.x * W, y: f.y * H, w: f.w * W, h: f.h * H }))
+  // 照片框带编号：贴在照片角上的贴纸可以压住「自己的」照片一角
+  const blocked = frames.map((f, i) => ({ x: f.x * W, y: f.y * H, w: f.w * W, h: f.h * H, frame: i }))
     .concat(avoid)
     .concat((cfg.avoid || []).map(a => ({ x: a.x * W, y: a.y * H, w: a.w * W, h: a.h * H })))
   const [minS, maxS] = cfg.size || [70, 110]
@@ -308,30 +421,60 @@ function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, b
       : it.type === 'passport' ? passportRadius(size, it.count)
       : it.type === 'tornStrip' ? size * 0.46
       : it.type === 'luggageTag' ? size * 0.46
+      : it.type === 'note' ? size * 0.62
       : size / 2
     return { it, size, radius: radius + 12 * unit }
   }).sort((a, b) => b.radius - a.radius)
   const taken = {}
   // 找一个放得下的装饰位；印章放不下时依次缩小再试（线稿只试原尺寸）
-  const findSpot = radius => {
+  // inside：贴纸、便签纸是图片，旋转后四角会伸出去，要完整收在页内并留出边距
+  const clear = (x, y, radius, own) => blocked.every(b => b.frame === own || x + radius < b.x || x - radius > b.x + b.w || y + radius < b.y || y - radius > b.y + b.h)
+  // 照片角装饰位：贴纸中心在照片角外侧，压住照片一小角，和照片组成一组（整页满版的照片不贴）
+  const anchorSpot = (radius, k) => {
+    const margin = radius + 24 * unit
+    const corners = []
+    frames.forEach((f, i) => {
+      if (f.w * f.h > 0.7) return
+      ;[[0, 0], [1, 0], [0, 1], [1, 1]].forEach(([cx, cy]) => {
+        const x = (f.x + f.w * cx) * W + (cx ? 1 : -1) * radius * 0.42
+        const y = (f.y + f.h * cy) * H + (cy ? 1 : -1) * radius * 0.42
+        corners.push({ x, y, i, key: `a:${i}:${cx}${cy}` })
+      })
+    })
+    corners.sort((a, b) => rnd(`anchor:${k}:${a.key}`) - rnd(`anchor:${k}:${b.key}`))
+    for (let j = 0; j < corners.length; j++) {
+      const c = corners[j]
+      if (taken[c.key]) continue
+      // 半页以外（跨页大图的另一半）也要整个收在页内
+      const ox = page.side === 'full' && c.x > pageW ? pageW : 0
+      if (c.x - margin < ox || c.x + margin > ox + pageW || c.y - margin < 0 || c.y + margin > H) continue
+      if (clear(c.x, c.y, radius, c.i)) return { x: c.x, y: c.y, key: c.key }
+    }
+    return null
+  }
+  const findSpot = (radius, inside) => {
     for (let i = 0; i < candidates.length; i++) {
       const c = candidates[i]
       if (taken[c.key]) continue
       // 大的章往页内收一点，不出页边
-      const margin = radius * 0.8
+      const margin = inside ? radius + 24 * unit : radius * 0.8
       const x = Math.max(c.ox + margin, Math.min(c.ox + pageW - margin, c.x))
       const y = Math.max(margin, Math.min(H - margin, c.y))
-      if (blocked.every(b => x + radius < b.x || x - radius > b.x + b.w || y + radius < b.y || y - radius > b.y + b.h)) return { x, y, key: c.key }
+      if (clear(x, y, radius, -1)) return { x, y, key: c.key }
     }
     return null
   }
-  sized.forEach(({ it, size, radius }) => {
+  const anchorChance = (style.ornaments && style.ornaments.anchorChance) || 0
+  sized.forEach(({ it, size, radius }, n) => {
     let spot = null
     let scale = 1
-    const scales = it.type === 'doodle' ? [1] : [1, 0.8, 0.65]
+    const scales = it.type === 'doodle' ? [1] : it.type === 'sticker' ? [1, 0.8, 0.65, 0.5] : [1, 0.8, 0.65]
+    // 贴纸按比例优先贴在照片角上
+    const anchored = it.type === 'sticker' && rnd(`anchored:${page.side}:${n}`) < anchorChance
     for (let i = 0; i < scales.length && !spot; i++) {
       scale = scales[i]
-      spot = findSpot(radius * scale)
+      if (anchored) spot = anchorSpot(radius * scale, n)
+      if (!spot) spot = findSpot(radius * scale, it.type === 'sticker' || it.type === 'note')
     }
     if (!spot) return
     const r = radius * scale
@@ -345,6 +488,10 @@ function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, b
         lineWidth: (cfg.lineWidth || 3) * unit,
         rotate: (rnd(`rot:${k}`) * 2 - 1) * (cfg.rotate || 0)
       })
+    } else if (it.type === 'sticker') {
+      drawSticker(ctx, images, it.name, spot.x, spot.y, size * scale, (rnd(`rot:${k}`) * 2 - 1) * (it.cfg.rotate == null ? 12 : it.cfg.rotate), unit, it.cfg.shadow)
+    } else if (it.type === 'note') {
+      drawNote(ctx, style, images, it.cfg, it, spot.x, spot.y, size * scale, pickStripText(it.cfg, page, style), unit, `${seed}:${page.side}`)
     } else if (it.type === 'tornStrip') {
       const text = pickStripText(it.cfg, page, style)
       drawTornStrip(ctx, style, it.cfg, spot.x, spot.y, size * scale, (rnd(`strip:${k}`) * 2 - 1) * 8, text, unit, `${seed}:${page.side}`)
@@ -360,4 +507,17 @@ function drawSmallOrnaments(ctx, style, page, plan, frames, W, H, unit, avoid, b
   })
 }
 
-module.exports = { SPOTS, planOrnaments, drawBigOrnament, drawSmallOrnaments, drawPattern }
+// 装饰计划用到的素材分包图片名（渲染前按需加载，避免一次解码整个分包）
+function planImageNames(plan) {
+  const names = []
+  if (plan.frameSticker) names.push(plan.frameSticker.name)
+  // 邮票里的贴纸（线稿名不在素材分包里，加载时会自动跳过）
+  Object.keys(plan.names.stamp).forEach(side => names.push(plan.names.stamp[side]))
+  Object.keys(plan.small).forEach(side => plan.small[side].forEach(it => {
+    if (it.type === 'sticker' && it.name) names.push(it.name)
+    if (it.type === 'note') names.push(it.image, it.clip)
+  }))
+  return names.filter(Boolean)
+}
+
+module.exports = { SPOTS, planOrnaments, planImageNames, drawBigOrnament, drawSmallOrnaments, drawPattern }
