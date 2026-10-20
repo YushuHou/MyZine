@@ -1,0 +1,32 @@
+{
+  "pack": "family",
+  "out": "pkg-family/assets.js",
+  "budgetKB": 1900,
+  "defaults": { "maxSide": 520, "outline": 12, "outlineClose": 10, "colors": 256 },
+  "sources": [
+    {
+      "file": "../MyZine素材/家庭/ChatGPT 图像 2026年10月20日 19_26_27.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["bears", "ducks", "giraffes", "foxes", "elephants", "penguins"]
+    },
+    {
+      "file": "../MyZine素材/家庭/ChatGPT 图像 2026年10月20日 19_27_48.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["kite", "balloons", "wagon", "tent", "picnic", "teacup"]
+    },
+    {
+      "file": "../MyZine素材/家庭/ChatGPT 图像 2026年10月20日 19_30_31.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["house", "sunflower", "rainbow", "shoes", "teddy", "cake"]
+    },
+    {
+      "file": "../MyZine素材/家庭/ChatGPT 图像 2026年10月20日 19_30_35.png",
+      "kind": "paper", "grid": [2, 3], "maxSide": 640,
+      "names": ["tapeGingham", "tapeDots", "tapeBlue", "noteGrid", "noteCloud", "clip"]
+    },
+    {
+      "file": "../MyZine素材/家庭/ChatGPT 图像 2026年10月20日 19_31_28.png",
+      "kind": "texture", "name": "paper", "size": 1024, "quality": 80
+    }
+  ]
+}

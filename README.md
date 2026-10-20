@@ -70,6 +70,7 @@ pkg-snow/       分包：「冬日雪国」图片素材
 pkg-cat/        分包：「喵呜时光」图片素材
 pkg-dog/        分包：「小汪出游」图片素材
 pkg-couple/     分包：「心动旅程」图片素材
+pkg-family/     分包：「温馨时刻」图片素材
 dev/            分包（开发用，提审前移除）：素材与滤镜验证页、线稿与字形预览页
 scripts/        build-glyphs.py（生成字形数据）、build-stickers.py + packs/*.json（处理图片素材），均不进小程序包
 licenses/fonts/ OFL 授权全文（不进小程序包）

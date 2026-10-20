@@ -19,6 +19,7 @@ module.exports = [].concat(
     require('./cat'),
     require('./dog'),
     require('./couple'),
+    require('./family'),
     require('./nature'),
     require('./food'),
     require('./farm'),

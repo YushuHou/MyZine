@@ -8,7 +8,8 @@ const LOADERS = {
   snow: () => require.async('../../pkg-snow/assets.js'),
   cat: () => require.async('../../pkg-cat/assets.js'),
   dog: () => require.async('../../pkg-dog/assets.js'),
-  couple: () => require.async('../../pkg-couple/assets.js')
+  couple: () => require.async('../../pkg-couple/assets.js'),
+  family: () => require.async('../../pkg-family/assets.js')
 }
 
 const packs = {}

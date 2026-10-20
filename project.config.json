@@ -44,7 +44,8 @@
         "pkg-snow/**",
         "pkg-cat/**",
         "pkg-dog/**",
-        "pkg-couple/**"
+        "pkg-couple/**",
+        "pkg-family/**"
       ],
       "disablePlugins": [],
       "outputPath": ""

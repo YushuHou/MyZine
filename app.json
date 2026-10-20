@@ -38,6 +38,11 @@
       "root": "pkg-couple",
       "name": "couple",
       "pages": []
+    },
+    {
+      "root": "pkg-family",
+      "name": "family",
+      "pages": []
     }
   ],
   "window": {
