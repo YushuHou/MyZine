@@ -6,7 +6,8 @@
 const LOADERS = {
   beach: () => require.async('../../pkg-beach/assets.js'),
   snow: () => require.async('../../pkg-snow/assets.js'),
-  cat: () => require.async('../../pkg-cat/assets.js')
+  cat: () => require.async('../../pkg-cat/assets.js'),
+  dog: () => require.async('../../pkg-dog/assets.js')
 }
 
 const packs = {}

@@ -28,6 +28,11 @@
       "root": "pkg-cat",
       "name": "cat",
       "pages": []
+    },
+    {
+      "root": "pkg-dog",
+      "name": "dog",
+      "pages": []
     }
   ],
   "window": {

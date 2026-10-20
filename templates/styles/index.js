@@ -17,6 +17,7 @@ module.exports = [].concat(
     require('./beach'),
     require('./snow'),
     require('./cat'),
+    require('./dog'),
     require('./nature'),
     require('./food'),
     require('./farm'),

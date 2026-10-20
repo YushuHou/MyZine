@@ -68,6 +68,7 @@ pkg-fonts/      分包：MZ Playfair / MZ Caveat / MZ Oswald 字形数据 + 字�
 pkg-beach/      分包：「大海沙滩」图片素材（贴纸、纸胶带、便签纸、纸纹，Data URL 写在 assets.js 中，脚本生成）
 pkg-snow/       分包：「冬日雪国」图片素材
 pkg-cat/        分包：「喵呜时光」图片素材
+pkg-dog/        分包：「小汪出游」图片素材
 dev/            分包（开发用，提审前移除）：素材与滤镜验证页、线稿与字形预览页
 scripts/        build-glyphs.py（生成字形数据）、build-stickers.py + packs/*.json（处理图片素材），均不进小程序包
 licenses/fonts/ OFL 授权全文（不进小程序包）

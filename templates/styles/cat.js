@@ -7,6 +7,8 @@ const CATS = ['catNap', 'catStretch', 'catLoaf', 'catBelly', 'catBox', 'catBack'
 const TOYS = ['yarn', 'driedFish', 'wand', 'bowl', 'paw', 'collar']
 const TRAVEL = ['catSuitcase', 'catTote', 'catCamera', 'catPicnic', 'catPlane', 'catLetter']
 const STICKERS = CATS.concat(TOYS, TRAVEL)
+// 小物件比猫咪小一些
+const SCALES = { yarn: 0.75, driedFish: 0.75, wand: 0.85, bowl: 0.75, paw: 0.6, collar: 0.72 }
 
 module.exports = {
   id: 'cat',
@@ -84,7 +86,7 @@ module.exports = {
     { type: 'stamp', accent: 'postal', largestOnly: true, minWidth: 380, w: 140, h: 170, inset: 26, fill: 'stampFill', stickers: ['catLoaf', 'catNap', 'catBox', 'catLetter', 'catPlane', 'paw'] },
     { type: 'postmark', accent: 'postal', largestOnly: true, minWidth: 380, r: 92, color: 'postmark', font: { glyph: 'oswald', family: 'sans-serif', letterSpacing: 1.5, uppercase: true } },
     // 本页最大的照片角上压一只小猫或猫咪小物
-    { type: 'frameSticker', accent: 'sticker', names: STICKERS, size: [210, 280], rotate: 14, corners: ['top-right', 'bottom-left', 'bottom-right'] }
+    { type: 'frameSticker', accent: 'sticker', names: STICKERS, scales: SCALES, size: [210, 280], rotate: 14, corners: ['top-right', 'bottom-left', 'bottom-right'] }
   ],
   decorations: [],
   // 细线稿（手账）：爱心、闪光、星星，只在装饰多的跨页里点缀
@@ -101,7 +103,7 @@ module.exports = {
     bigPerSpread: [1, 2],
     tones: ['accent', 'accent', 'peach', 'lilac'],
     small: [
-      { type: 'sticker', names: STICKERS, size: [230, 340], rotate: 14, weight: 5 },
+      { type: 'sticker', names: STICKERS, scales: SCALES, size: [230, 340], rotate: 14, weight: 5 },
       { type: 'note', images: ['notePink', 'noteCat'], size: [250, 310], clip: 'clip', clipChance: 0.45, text: ['pool', 'place'], font: { glyph: 'caveat', family: 'serif', size: 50, color: 'text' }, weight: 1.3 },
       { type: 'tornStrip', paper: 'lined', size: [240, 320], height: 74, text: ['pool'], font: { glyph: 'caveat', family: 'serif', size: 42, color: 'text' }, weight: 0.5 },
       { type: 'doodle', weight: 0.8 }

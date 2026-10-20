@@ -16,7 +16,7 @@
 //   ],
 //   small: [{ type: 'doodle', weight }, { type: 'seal', size: [110, 150], color, weight }, { type: 'passport', size: [140, 180], count: [1, 3], colors, weight },
 //           { type: 'tornStrip', size: [240, 340], paper, height, font, text, weight }（撕纸条）, { type: 'luggageTag', size: [260, 320], paper, band, string, weight }（行李吊牌）,
-//           { type: 'sticker', names, size: [180, 300], rotate, weight }（素材贴纸，同一跨页不重复）,
+//           { type: 'sticker', names, size: [180, 300], rotate, scales: { 素材名: 倍数 }, weight }（素材贴纸，同一跨页不重复；scales 让小物件比动物小）,
 //           { type: 'note', images, size, clip, clipChance, font, text, weight }（素材便签纸，每跨页最多 1 张）],
 //   bigPerSpread: [1, 2],             // 可选：每跨页大装饰数量（默认 1）；同一种不会重复
 //   smallPerSpread: [2, 3],
@@ -280,7 +280,7 @@ function planOrnaments(style, page, layout) {
           side: fs.accent ? plan.accentSide : sides[Math.floor(rnd('fsticker:side') * sides.length)],
           name,
           corner: corners[Math.floor(rnd('fsticker:corner') * corners.length)],
-          size: between(fs.size || [150, 210], rnd('fsticker:size')),
+          size: between(fs.size || [150, 210], rnd('fsticker:size')) * ((fs.scales && fs.scales[name]) || 1),
           angle: (rnd('fsticker:angle') * 2 - 1) * (fs.rotate == null ? 12 : fs.rotate)
         }
       }
@@ -324,7 +324,9 @@ function planOrnaments(style, page, layout) {
       const t = avail[pickWeighted(avail, rnd, `small:type:${i}`)]
       if (t.type === 'doodle') items.push({ type: 'doodle', name: take(doodleCfg.names, `doodle:${i}`) })
       else if (t.type === 'sticker') {
-        items.push({ type: 'sticker', cfg: t, name: takeSticker(t.names, `sticker:${i}`), size: between(t.size || [180, 300], rnd(`sticker:size:${i}`)) })
+        const name = takeSticker(t.names, `sticker:${i}`)
+        const scale = (t.scales && t.scales[name]) || 1
+        items.push({ type: 'sticker', cfg: t, name, size: between(t.size || [180, 300], rnd(`sticker:size:${i}`)) * scale })
       } else if (t.type === 'note') {
         noteDone = true
         const imgs = t.images || []

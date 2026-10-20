@@ -42,7 +42,8 @@
       "ignore": [
         "pkg-beach/**",
         "pkg-snow/**",
-        "pkg-cat/**"
+        "pkg-cat/**",
+        "pkg-dog/**"
       ],
       "disablePlugins": [],
       "outputPath": ""
