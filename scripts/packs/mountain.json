@@ -1,0 +1,32 @@
+{
+  "pack": "mountain",
+  "out": "pkg-mountain/assets.js",
+  "budgetKB": 1900,
+  "defaults": { "maxSide": 520, "outline": 12, "outlineClose": 10, "colors": 256 },
+  "sources": [
+    {
+      "file": "../MyZine素材/山野/ChatGPT 图像 2026年10月20日 19_49_10.png",
+      "kind": "sticker", "grid": [2, 3], "dropSmall": 0.05,
+      "names": ["peak", "dock", "pine", "maple", "waterfall", "mossRock"]
+    },
+    {
+      "file": "../MyZine素材/山野/ChatGPT 图像 2026年10月20日 19_49_34.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["tent", "campfire", "boots", "backpack", "compass", "mug"]
+    },
+    {
+      "file": "../MyZine素材/山野/ChatGPT 图像 2026年10月20日 19_53_39.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["fawn", "squirrel", "kingfisher", "wildflowers", "mushrooms", "butterfly"]
+    },
+    {
+      "file": "../MyZine素材/山野/ChatGPT 图像 2026年10月20日 19_53_42.png",
+      "kind": "paper", "grid": [2, 3], "maxSide": 640,
+      "names": ["tapeGingham", "tapeLeaf", "tapeKraft", "noteGrid", "noteLeaf", "clip"]
+    },
+    {
+      "file": "../MyZine素材/山野/ChatGPT 图像 2026年10月20日 19_55_21.png",
+      "kind": "texture", "name": "paper", "size": 1024, "quality": 80
+    }
+  ]
+}

@@ -48,6 +48,11 @@
       "root": "pkg-city",
       "name": "city",
       "pages": []
+    },
+    {
+      "root": "pkg-mountain",
+      "name": "mountain",
+      "pages": []
     }
   ],
   "window": {

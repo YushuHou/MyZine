@@ -13,8 +13,8 @@ function getLayout(id) {
   return layout
 }
 
-// 改名的风格：旧 id → 新 id（原「极简」并入纸白，原「海边明信片」并入大海沙滩）
-const STYLE_ALIASES = { minimal: 'paper', postcard: 'beach' }
+// 改名的风格：旧 id → 新 id（原「极简」并入纸白，原「海边明信片」并入大海沙滩，原「自然风光」并入山野湖光）
+const STYLE_ALIASES = { minimal: 'paper', postcard: 'beach', nature: 'mountain' }
 
 // 找不到时退回第一个风格，避免旧数据引用已删除的风格时崩溃
 function getStyle(id) {

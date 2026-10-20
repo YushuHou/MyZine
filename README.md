@@ -72,6 +72,7 @@ pkg-dog/        分包：「小汪出游」图片素材
 pkg-couple/     分包：「心动旅程」图片素材
 pkg-family/     分包：「温馨时刻」图片素材
 pkg-city/       分包：「城市漫游」图片素材
+pkg-mountain/   分包：「山野湖光」图片素材
 dev/            分包（开发用，提审前移除）：素材与滤镜验证页、线稿与字形预览页
 scripts/        build-glyphs.py（生成字形数据）、build-stickers.py + packs/*.json（处理图片素材），均不进小程序包
 licenses/fonts/ OFL 授权全文（不进小程序包）
@@ -136,7 +137,7 @@ renderPage / renderSpread     背景（+ 纹样）→ 大装饰 → 色块 → �
 画布读不到分包里的图片文件，所以图片素材转成 Data URL 写进分包 JS 模块，渲染前用 `require.async` 加载，只解码当前跨页用到的图片。
 
 1. 用 AI 生成合集图：**纯浅灰底（#C8C8C8）**，2 行 × 3 列，物件互不接触、不碰画面边缘，不要白描边和文字（提示词见 `docs/plans/阶段8a-大海沙滩试点.md` 第 5 节）。原图放在**项目文件夹外**的 `../MyZine素材/主题名/`（不进仓库；放在项目里会被开发者工具算进主包大小）。
-2. 写配置 `scripts/packs/xxx.json`：每张图的文件、类型（`sticker` 贴纸自动加白描边 / `paper` 纸胶带便签纸 / `texture` 背景纸纹）、网格和每格的素材名（`null` 跳过该格）。半透明物件（如透明胶带）列进 `solid`，避免抠出破洞，绘制时用风格 `tape.alphas` 调透明度。
+2. 写配置 `scripts/packs/xxx.json`：每张图的文件、类型（`sticker` 贴纸自动加白描边 / `paper` 纸胶带便签纸 / `texture` 背景纸纹）、网格和每格的素材名（`null` 跳过该格）。相邻物件伸进本格的小碎片用 `dropSmall`（如 0.05）丢弃；半透明物件（如透明胶带）列进 `solid`，避免抠出破洞，绘制时用风格 `tape.alphas` 调透明度。
 3. 运行 `python -I scripts/build-stickers.py scripts/packs/xxx.json --preview 输出目录`：生成 `pkg-xxx/img/素材名.js`（每张图一个文件）和汇总入口 `pkg-xxx/assets.js`，打印每个素材的大小，并输出检查拼图。不要把素材合成一个大文件：单个 JS 文件达到 1MB 以上时，预览上传会失败，报「系统错误 -80418」或 abort（2026-10-20 实测，拆成每张图一个文件后正常）。分包上限 2MB，脚本默认预算 1900KB。
 4. 在 `app.json` 的 `subpackages` 中加 `{ "root": "pkg-xxx", "name": "xxx", "pages": [] }`，在 `core/render/assetPacks.js` 的 `LOADERS` 中加一行（`require.async` 路径必须是字面量）。
 5. 风格文件写 `assetPack: 'xxx'`，再用素材名配置贴纸、纸胶带、便签纸和背景（参考 `templates/styles/beach.js`）。分包加载失败时，素材不画，胶带退回代码绘制。

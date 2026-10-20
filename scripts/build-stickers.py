@@ -72,28 +72,36 @@ def matte(rgb, cfg):
     return fg, alpha
 
 
-def split_cells(alpha, rows, cols, min_area=40):
-    """按网格把连通区域分到各格（按区域重心），返回每格的包围盒（无内容为 None）"""
+def split_cells(alpha, rows, cols, min_area=40, drop_small=0):
+    """按网格把连通区域分到各格（按区域重心），返回每格的包围盒（无内容为 None）和要丢弃的碎片掩膜
+    drop_small > 0 时，面积小于本格最大区域 drop_small 倍的碎片丢弃（如相邻物件伸过来的一小片水面）"""
     h, w = alpha.shape
     mask = alpha > 0.5
     labels, n = ndimage.label(mask)
-    boxes = [None] * (rows * cols)
     objs = ndimage.find_objects(labels)
     centers = ndimage.center_of_mass(mask, labels, range(1, n + 1))
     areas = ndimage.sum(mask, labels, range(1, n + 1))
+    members = [[] for _ in range(rows * cols)]
     for i in range(n):
         if areas[i] < min_area:
             continue
         cy, cx = centers[i]
-        cell = min(rows - 1, int(cy / h * rows)) * cols + min(cols - 1, int(cx / w * cols))
-        sl = objs[i]
-        box = [sl[0].start, sl[1].start, sl[0].stop, sl[1].stop]
-        if boxes[cell] is None:
-            boxes[cell] = box
-        else:
+        members[min(rows - 1, int(cy / h * rows)) * cols + min(cols - 1, int(cx / w * cols))].append(i)
+    boxes = [None] * (rows * cols)
+    dropped = []
+    for cell, ids in enumerate(members):
+        if not ids:
+            continue
+        biggest = max(areas[i] for i in ids)
+        for i in ids:
+            if drop_small and areas[i] < biggest * drop_small:
+                dropped.append(i + 1)
+                continue
+            sl = objs[i]
+            box = [sl[0].start, sl[1].start, sl[0].stop, sl[1].stop]
             b = boxes[cell]
-            boxes[cell] = [min(b[0], box[0]), min(b[1], box[1]), max(b[2], box[2]), max(b[3], box[3])]
-    return boxes, labels
+            boxes[cell] = box if b is None else [min(b[0], box[0]), min(b[1], box[1]), max(b[2], box[2]), max(b[3], box[3])]
+    return boxes, np.isin(labels, dropped)
 
 
 def to_rgba(fg, alpha):
@@ -191,7 +199,8 @@ def build(config_path, preview_dir=None):
         rgb = np.asarray(image.convert('RGB')).astype(float)
         fg, alpha = matte(rgb, opt)
         rows, cols = src['grid']
-        boxes, _ = split_cells(alpha, rows, cols)
+        boxes, drop = split_cells(alpha, rows, cols, drop_small=opt.get('dropSmall', 0))
+        alpha = np.where(drop, 0.0, alpha)
         for i, name in enumerate(src['names']):
             if not name:
                 continue

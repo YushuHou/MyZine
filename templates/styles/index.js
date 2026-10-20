@@ -13,7 +13,7 @@ module.exports = [].concat(
     require('./hkretro'),
     require('./japanese'),
     require('./mono'),
-    // 主题（大海沙滩起使用图片素材分包；原「海边明信片」已并入大海沙滩）
+    // 主题（大海沙滩起使用图片素材分包；原「海边明信片」已并入大海沙滩，原「自然风光」已并入山野湖光）
     require('./beach'),
     require('./snow'),
     require('./cat'),
@@ -21,7 +21,7 @@ module.exports = [].concat(
     require('./couple'),
     require('./family'),
     require('./city'),
-    require('./nature'),
+    require('./mountain'),
     require('./food'),
     require('./farm'),
     require('./roadtrip'),
