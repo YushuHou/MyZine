@@ -6,10 +6,11 @@
 流程（详见 docs/plans/阶段8a-大海沙滩试点.md 第 2 节）：
   1. 抠背景：拟合背景灰（二次曲面），与背景色差小的大块连通区域变透明，边缘按色差渐变并去掉灰边
   2. 切图：按合集图的行列网格，把每格里的连通区域合成一个素材，裁掉空白
+    半透明物件（配置 solid 列出的素材名）取外轮廓填实，避免破洞
   3. 统一尺寸：长边不超过 maxSide
   4. 贴纸加白色描边（模切贴纸效果）
   5. 量化成 256 色调色板 PNG（保留透明）
-  6. 写成分包 JS 模块：{ name: { w, h, src: Data URL } }（画布读不到分包里的图片文件，见阶段 6 验证结论）
+  6. 写成分包 JS 模块：每张图一个 img/素材名.js（{ w, h, src: Data URL }），assets.js 汇总（画布读不到分包里的图片文件，见阶段 6 验证结论）
 背景纸纹：裁方 → 缩放 → 半幅错位混合消除平铺接缝 → JPG
 """
 import base64
@@ -98,6 +99,13 @@ def split_cells(alpha, rows, cols, min_area=40):
 def to_rgba(fg, alpha):
     arr = np.dstack([fg, alpha * 255]).round().clip(0, 255).astype(np.uint8)
     return Image.fromarray(arr)
+
+
+def solid_piece(rgb, alpha):
+    """半透明物件（如透明胶带）颜色接近背景、会被抠出破洞：取外轮廓填实，颜色用原图（透明感由代码绘制时的透明度表现）"""
+    mask = ndimage.binary_fill_holes(ndimage.binary_closing(alpha > 0.3, structure=disk(6)))
+    soft = np.asarray(Image.fromarray((mask * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8))) / 255.0
+    return to_rgba(rgb, soft)
 
 
 def disk(r):
@@ -192,7 +200,10 @@ def build(config_path, preview_dir=None):
                 print(f'  ! 第 {i + 1} 格没有内容：{name}')
                 continue
             t, l, b, r = box
-            piece = to_rgba(fg[t:b, l:r], alpha[t:b, l:r])
+            if name in opt.get('solid', []):
+                piece = solid_piece(rgb[t:b, l:r], alpha[t:b, l:r])
+            else:
+                piece = to_rgba(fg[t:b, l:r], alpha[t:b, l:r])
             piece = fit_size(trim(piece), opt.get('maxSide', 560))
             if src['kind'] == 'sticker' and opt.get('outline'):
                 piece = add_outline(piece, opt['outline'], opt.get('outlineClose', 10), opt.get('holeRatio', 0.02))
@@ -200,24 +211,35 @@ def build(config_path, preview_dir=None):
             assets[name] = ('png', piece.size, png_bytes(piece, opt.get('colors', 256)))
             previews.append((name, piece))
 
-    # 写分包 JS 模块
+    # 写分包 JS 模块：每张图一个小文件（img/素材名.js），assets.js 汇总引用
+    # 不写成一个大文件：单个 JS 文件达到 1MB 以上时，预览上传会失败（「系统错误 -80418」或 abort，2026-10-20 实测）
     out = os.path.join(ROOT, cfg['out'])
-    os.makedirs(os.path.dirname(out), exist_ok=True)
+    out_dir = os.path.dirname(out)
+    img_dir = os.path.join(out_dir, 'img')
+    os.makedirs(img_dir, exist_ok=True)
+    for old in os.listdir(img_dir):
+        if old.endswith('.js'):
+            os.remove(os.path.join(img_dir, old))
     entries = []
     total = 0
+    pack_size = 0
     print(f'素材分包 {cfg["pack"]}：')
+    note = f'// 素材分包「{cfg["pack"]}」：由 scripts/build-stickers.py 根据 {os.path.basename(config_path)} 生成，请勿手改\n'
     for name, (fmt, (w, h), data) in assets.items():
         total += len(data)
         b64 = base64.b64encode(data).decode('ascii')
-        entries.append(f'  {json.dumps(name)}: {{ w: {w}, h: {h}, src: "data:image/{fmt};base64,{b64}" }}')
+        path = os.path.join(img_dir, f'{name}.js')
+        with open(path, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(note + f'module.exports = {{ w: {w}, h: {h}, src: "data:image/{fmt};base64,{b64}" }}\n')
+        pack_size += os.path.getsize(path)
+        entries.append(f"  {json.dumps(name)}: require('./img/{name}.js')")
         print(f'  {name:<14} {w:>4}×{h:<4} {len(data) / 1024:7.1f} KB')
-    header = (f'// 素材分包「{cfg["pack"]}」：由 scripts/build-stickers.py 根据 {os.path.basename(config_path)} 生成，请勿手改\n'
-              '// 画布读不到分包里的图片文件，所以图片以 Data URL 写在 JS 模块里，用 require.async 加载\n')
+    header = note + '// 画布读不到分包里的图片文件，所以图片以 Data URL 写在 JS 模块里（每张图一个文件），用 require.async 加载本文件\n'
     with open(out, 'w', encoding='utf-8', newline='\n') as f:
         f.write(header + 'module.exports = {\n' + ',\n'.join(entries) + '\n}\n')
-    size = os.path.getsize(out)
+    size = pack_size + os.path.getsize(out)
     budget = cfg.get('budgetKB', 1900)
-    print(f'  图片合计 {total / 1024:.0f} KB；JS 模块 {size / 1024:.0f} KB（预算 {budget} KB）')
+    print(f'  图片合计 {total / 1024:.0f} KB；JS 模块合计 {size / 1024:.0f} KB（预算 {budget} KB）')
     if size / 1024 > budget:
         print('  ! 超出预算：减少素材数量或调小 maxSide')
 

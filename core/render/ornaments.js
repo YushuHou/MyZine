@@ -10,6 +10,8 @@
 //     { type: 'patternBlock', name, x, y, w, h, fill, color, alpha, cell, weight },           // 纹样色块（左右页随机一侧，右页镜像）
 //     { type: 'deco', deco: { …页面装饰… }, weight }                                          // 任意页面装饰（如格纹桌布页边）
 //     { type: 'wash', colors, alpha, size: [0.4, 0.6], weight }                                // 水彩晕染（衬在最大照片的一角下面）
+//     { type: 'paperBand', colors, mix, y, height, cover, weight }                              // 跨中缝撕纸色带（见 paperBand.js）
+//     { type: 'snowfall', density, flakes, size, weight }                                      // 飘雪（见 snowfall.js）
 //   ],
 //   small: [{ type: 'doodle', weight }, { type: 'seal', size: [110, 150], color, weight }, { type: 'passport', size: [140, 180], count: [1, 3], colors, weight },
 //           { type: 'tornStrip', size: [240, 340], paper, height, font, text, weight }（撕纸条）, { type: 'luggageTag', size: [260, 320], paper, band, string, weight }（行李吊牌）,
@@ -36,6 +38,7 @@ const { drawTornStrip, drawLuggageTag, pickStripText } = require('./paperBits')
 const { drawSticker, drawNote } = require('./stickers')
 const { drawPageWash } = require('./wash')
 const { drawPaperBand } = require('./paperBand')
+const { drawSnowfall } = require('./snowfall')
 
 const cache = {}
 let cacheSize = 0
@@ -383,6 +386,7 @@ function drawOneBig(ctx, style, page, layout, plan, big, W, H, unit, images, bg)
   }
   if (c.type === 'wash') return drawPageWash(ctx, style, c, page, getLayoutPage(layout, page.side).frames, W, H, unit, plan.tone)
   if (c.type === 'paperBand') return drawPaperBand(ctx, style, c, big, page, W, H, unit, images, plan.tone)
+  if (c.type === 'snowfall') return drawSnowfall(ctx, style, c, page, W, H, unit, plan.tone)
   if (c.type === 'deco') {
     drawDecoration(ctx, style, c.deco, page, W, H, unit, images, bg)
     return []

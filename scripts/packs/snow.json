@@ -1,0 +1,32 @@
+{
+  "pack": "snow",
+  "out": "pkg-snow/assets.js",
+  "budgetKB": 1900,
+  "defaults": { "maxSide": 520, "outline": 12, "outlineClose": 10, "colors": 256 },
+  "sources": [
+    {
+      "file": "../MyZine素材/冬日/ChatGPT 图像 2026年10月20日 17_45_12.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["snowman", "beanie", "mittens", "cocoa", "scarf", "tanghulu"]
+    },
+    {
+      "file": "../MyZine素材/冬日/ChatGPT 图像 2026年10月20日 17_46_25.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["pine", "cabin", "sled", "skis", "snowflake", "postbox"]
+    },
+    {
+      "file": "../MyZine素材/冬日/ChatGPT 图像 2026年10月20日 17_47_56.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["fox", "bullfinch", "iceCastle", "onsen", "train", "lamppost"]
+    },
+    {
+      "file": "../MyZine素材/冬日/ChatGPT 图像 2026年10月20日 17_48_40.png",
+      "kind": "paper", "grid": [2, 3], "maxSide": 640, "solid": ["tapeClear"],
+      "names": ["tapeGingham", "tapeSnow", "tapeClear", "noteGrid", "noteKraft", "clip"]
+    },
+    {
+      "file": "../MyZine素材/冬日/ChatGPT 图像 2026年10月20日 17_49_24.png",
+      "kind": "texture", "name": "paper", "size": 1024, "quality": 80
+    }
+  ]
+}

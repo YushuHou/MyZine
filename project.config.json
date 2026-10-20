@@ -26,10 +26,6 @@
       {
         "type": "folder",
         "value": "dev"
-      },
-      {
-        "type": "folder",
-        "value": "图片素材"
       }
     ],
     "include": []
@@ -43,12 +39,15 @@
     "showShadowRootInWxmlPanel": true,
     "packNpmRelationList": [],
     "babelSetting": {
-      "ignore": [],
+      "ignore": [
+        "pkg-beach/**",
+        "pkg-snow/**"
+      ],
       "disablePlugins": [],
       "outputPath": ""
     },
     "uglifyFileName": false,
-    "uploadWithSourceMap": true,
+    "uploadWithSourceMap": false,
     "packNpmManually": false,
     "minifyWXSS": true,
     "localPlugins": false,

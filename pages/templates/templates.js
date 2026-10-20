@@ -4,12 +4,13 @@
 //       change 更换主模板（首页的「模板」卡片）
 // 编辑中给整本书或单独两页换风格用编辑页的模板面板（components/style-sheet）
 const app = getApp()
-const { listStyles, getLayout, getLayoutFrames } = require('../../core/registry')
+const { listStyles, getStyle, getLayout, getLayoutFrames } = require('../../core/registry')
 const { createSpread, createSlot } = require('../../core/album')
 const { buildBook } = require('../../core/book')
 const { createSpreadImageRenderer } = require('../../core/render/spreadImages')
 const THEMES = require('../../templates/themes')
 const UI_COLORS = require('../../core/uiColors')
+const { getAssetPack, preloadAssetPacks } = require('../../core/render/assetPacks')
 
 // 示例跨页的版式：左页标题 + 小图、右页大横图，能看到大标题、页眉、线稿、边框等风格特征
 const SAMPLE_LAYOUT = 'b-H1L-L1'
@@ -99,17 +100,25 @@ Page({
   },
 
   // 先渲染当前纯色，再逐个渲染风格组、主题组
+  // 素材分包还没下载完的模板（大海沙滩等）挪到最后，不让下载卡住其他模板的示例
   async renderAll() {
+    // 启动时已在后台预下载；用户很快进到这里时，确保下载已经开始
+    preloadAssetPacks()
     await this.renderSolidPreview()
-    const lists = [['styleCards', this.data.styleCards], ['themeCards', this.data.themeCards]]
-    for (const [key, cards] of lists) {
-      for (let i = 0; i < cards.length; i++) {
-        try {
-          const path = await this.renderPreview(cards[i].id)
-          this.setData({ [`${key}[${i}].preview`]: path }, () => this.applyFilter())
-        } catch (err) {
-          console.warn('生成模板示例失败', err)
-        }
+    const tasks = []
+    const later = []
+    ;[['styleCards', this.data.styleCards], ['themeCards', this.data.themeCards]].forEach(([key, cards]) => {
+      cards.forEach((card, i) => {
+        const pack = getStyle(card.id).assetPack
+        ;(pack && !getAssetPack(pack) ? later : tasks).push({ key, i, id: card.id })
+      })
+    })
+    for (const t of tasks.concat(later)) {
+      try {
+        const path = await this.renderPreview(t.id)
+        this.setData({ [`${t.key}[${t.i}].preview`]: path }, () => this.applyFilter())
+      } catch (err) {
+        console.warn('生成模板示例失败', err)
       }
     }
   },

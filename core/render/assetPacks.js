@@ -4,7 +4,8 @@
 
 // require.async 路径必须是字面量：新增素材分包时在这里加一行，并在 app.json 的 subpackages 中注册
 const LOADERS = {
-  beach: () => require.async('../../pkg-beach/assets.js')
+  beach: () => require.async('../../pkg-beach/assets.js'),
+  snow: () => require.async('../../pkg-snow/assets.js')
 }
 
 const packs = {}
@@ -39,9 +40,17 @@ function registerAssetPack(name, data) {
   packs[name] = data
 }
 
+/**
+ * 后台预下载全部素材分包（逐个下载，不抢首屏的网络）
+ * 分包要等用到时才下载，模板页按顺序生成示例时会卡在下载上；提前下好后微信会缓存，同一版本只下载一次
+ */
+function preloadAssetPacks() {
+  return Object.keys(LOADERS).reduce((chain, name) => chain.then(() => loadAssetPack(name)), Promise.resolve())
+}
+
 // 素材在图片表中的键名
 function packKey(name) {
   return `asset:pack:${name}`
 }
 
-module.exports = { loadAssetPack, getAssetPack, registerAssetPack, packKey }
+module.exports = { loadAssetPack, preloadAssetPacks, getAssetPack, registerAssetPack, packKey }

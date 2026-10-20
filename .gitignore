@@ -4,6 +4,3 @@ miniprogram_npm/
 project.private.config.json
 .DS_Store
 Thumbs.db
-
-# AI 生成的素材原图（只用于生成素材分包，不进仓库）
-图片素材/

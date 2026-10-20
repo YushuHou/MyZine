@@ -239,7 +239,7 @@ function drawPerforation(ctx, style, d, W, H, unit) {
 /**
  * 照片框装饰（画在照片上面，坐标系已按照片框旋转）
  * - tape 和纸胶带：{ colors, width, height, angleJitter, placement: 'top' | 'corners' }
- *     有 images（素材分包里的纸胶带图）时用图片，高度按图片比例；alpha 图片透明度
+ *     有 images（素材分包里的纸胶带图）时用图片，高度按图片比例；alpha 图片透明度，alphas 按图片单独设（如透明胶带）
  * - frameSticker 照片角贴纸：装饰计划分好名字和位置，每跨页最多 1 张，见 stickers.js
  * - stamp 邮票框 / postmark 邮戳圆环（明信片）：largestOnly 时只画在本页最大的照片框上；minWidth 小于它的框不画
  * - outline 霓虹描边：{ color, width, offset, glow }
@@ -310,7 +310,8 @@ function drawTapes(ctx, d, rect, unit, seed, images) {
     ctx.translate(s.x, s.y)
     ctx.rotate((s.angle + (r(`a${i}`) * 2 - 1) * jitter) * Math.PI / 180)
     // 素材图片缺失（分包加载失败）时退回代码画的胶带
-    if (!tapeImage || !drawImageTape(ctx, images, tapeImage, w, d.alpha)) drawTapeShape(ctx, w, h, color, unit)
+    const alpha = d.alphas && d.alphas[tapeImage] != null ? d.alphas[tapeImage] : d.alpha
+    if (!tapeImage || !drawImageTape(ctx, images, tapeImage, w, alpha)) drawTapeShape(ctx, w, h, color, unit)
     ctx.restore()
   })
 }

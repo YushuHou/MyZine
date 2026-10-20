@@ -18,6 +18,11 @@
       "root": "pkg-beach",
       "name": "beach",
       "pages": []
+    },
+    {
+      "root": "pkg-snow",
+      "name": "snow",
+      "pages": []
     }
   ],
   "window": {
