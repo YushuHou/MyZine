@@ -23,6 +23,11 @@
       "root": "pkg-snow",
       "name": "snow",
       "pages": []
+    },
+    {
+      "root": "pkg-cat",
+      "name": "cat",
+      "pages": []
     }
   ],
   "window": {

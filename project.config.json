@@ -41,7 +41,8 @@
     "babelSetting": {
       "ignore": [
         "pkg-beach/**",
-        "pkg-snow/**"
+        "pkg-snow/**",
+        "pkg-cat/**"
       ],
       "disablePlugins": [],
       "outputPath": ""

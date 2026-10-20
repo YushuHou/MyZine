@@ -5,7 +5,8 @@
 // require.async 路径必须是字面量：新增素材分包时在这里加一行，并在 app.json 的 subpackages 中注册
 const LOADERS = {
   beach: () => require.async('../../pkg-beach/assets.js'),
-  snow: () => require.async('../../pkg-snow/assets.js')
+  snow: () => require.async('../../pkg-snow/assets.js'),
+  cat: () => require.async('../../pkg-cat/assets.js')
 }
 
 const packs = {}

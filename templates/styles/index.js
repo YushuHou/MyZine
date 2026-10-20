@@ -16,6 +16,7 @@ module.exports = [].concat(
     // 主题（大海沙滩起使用图片素材分包；原「海边明信片」已并入大海沙滩）
     require('./beach'),
     require('./snow'),
+    require('./cat'),
     require('./nature'),
     require('./food'),
     require('./farm'),

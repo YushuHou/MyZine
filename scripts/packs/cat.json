@@ -1,0 +1,32 @@
+{
+  "pack": "cat",
+  "out": "pkg-cat/assets.js",
+  "budgetKB": 1900,
+  "defaults": { "maxSide": 520, "outline": 12, "outlineClose": 10, "colors": 256 },
+  "sources": [
+    {
+      "file": "../MyZine素材/猫咪/ChatGPT 图像 2026年10月20日 18_50_25.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["catNap", "catStretch", "catLoaf", "catBelly", "catBox", "catBack"]
+    },
+    {
+      "file": "../MyZine素材/猫咪/ChatGPT 图像 2026年10月20日 18_52_01.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["yarn", "driedFish", "wand", "bowl", "paw", "collar"]
+    },
+    {
+      "file": "../MyZine素材/猫咪/ChatGPT 图像 2026年10月20日 18_53_10.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["catSuitcase", "catTote", "catCamera", "catPicnic", "catPlane", "catLetter"]
+    },
+    {
+      "file": "../MyZine素材/猫咪/ChatGPT 图像 2026年10月20日 18_54_13.png",
+      "kind": "paper", "grid": [2, 3], "maxSide": 640,
+      "names": ["tapeGingham", "tapePaw", "tapePlain", "notePink", "noteCat", "clip"]
+    },
+    {
+      "file": "../MyZine素材/猫咪/背景纸纹",
+      "kind": "texture", "name": "paper", "size": 1024, "quality": 80
+    }
+  ]
+}

@@ -12,6 +12,7 @@
 //     { type: 'wash', colors, alpha, size: [0.4, 0.6], weight }                                // 水彩晕染（衬在最大照片的一角下面）
 //     { type: 'paperBand', colors, mix, y, height, cover, weight }                              // 跨中缝撕纸色带（见 paperBand.js）
 //     { type: 'snowfall', density, flakes, size, weight }                                      // 飘雪（见 snowfall.js）
+//     { type: 'pawTrail', size, stride, alpha, mix, y, weight }                                 // 横穿跨页的猫爪印小路（见 pawTrail.js）
 //   ],
 //   small: [{ type: 'doodle', weight }, { type: 'seal', size: [110, 150], color, weight }, { type: 'passport', size: [140, 180], count: [1, 3], colors, weight },
 //           { type: 'tornStrip', size: [240, 340], paper, height, font, text, weight }（撕纸条）, { type: 'luggageTag', size: [260, 320], paper, band, string, weight }（行李吊牌）,
@@ -39,6 +40,7 @@ const { drawSticker, drawNote } = require('./stickers')
 const { drawPageWash } = require('./wash')
 const { drawPaperBand } = require('./paperBand')
 const { drawSnowfall } = require('./snowfall')
+const { drawPawTrail } = require('./pawTrail')
 
 const cache = {}
 let cacheSize = 0
@@ -174,6 +176,15 @@ function buildBig(cand, layout, sides, rnd) {
       if (!best || score < best.score) best = { y, score }
     }
     return { cfg: cand, y: best.y, height }
+  }
+  if (cand.type === 'pawTrail') {
+    const [ymin, ymax] = cand.y || [0.15, 0.85]
+    return {
+      cfg: cand,
+      y0: ymin + rnd('paw:y0') * (ymax - ymin),
+      y1: ymin + rnd('paw:y1') * (ymax - ymin),
+      wave: { f: 0.6 + rnd('paw:f') * 0.8, p: rnd('paw:p') * Math.PI * 2, a: 0.03 + rnd('paw:a') * 0.04 }
+    }
   }
   if (cand.type === 'pagePattern') {
     const names = cand.names || [cand.name]
@@ -387,6 +398,7 @@ function drawOneBig(ctx, style, page, layout, plan, big, W, H, unit, images, bg)
   if (c.type === 'wash') return drawPageWash(ctx, style, c, page, getLayoutPage(layout, page.side).frames, W, H, unit, plan.tone)
   if (c.type === 'paperBand') return drawPaperBand(ctx, style, c, big, page, W, H, unit, images, plan.tone)
   if (c.type === 'snowfall') return drawSnowfall(ctx, style, c, page, W, H, unit, plan.tone)
+  if (c.type === 'pawTrail') return drawPawTrail(ctx, style, c, big, page, W, H, unit, plan.tone)
   if (c.type === 'deco') {
     drawDecoration(ctx, style, c.deco, page, W, H, unit, images, bg)
     return []
