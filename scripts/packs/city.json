@@ -1,0 +1,32 @@
+{
+  "pack": "city",
+  "out": "pkg-city/assets.js",
+  "budgetKB": 1900,
+  "defaults": { "maxSide": 520, "outline": 12, "outlineClose": 10, "colors": 256 },
+  "sources": [
+    {
+      "file": "../MyZine素材/城市/ChatGPT 图像 2026年10月20日 19_38_11.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["tower", "cafe", "clockTower", "bridge", "brownstone", "subway"]
+    },
+    {
+      "file": "../MyZine素材/城市/ChatGPT 图像 2026年10月20日 19_40_26.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["tram", "taxi", "bus", "bike", "streetLamp", "trafficLight"]
+    },
+    {
+      "file": "../MyZine素材/城市/ChatGPT 图像 2026年10月20日 19_42_09.png",
+      "kind": "sticker", "grid": [2, 3], "solid": ["umbrella"],
+      "names": ["coffee", "croissant", "camera", "umbrella", "sneakers", "groceryBag"]
+    },
+    {
+      "file": "../MyZine素材/城市/ChatGPT 图像 2026年10月20日 19_43_23.png",
+      "kind": "paper", "grid": [2, 3], "maxSide": 640, "solid": ["tapeClear"],
+      "names": ["tapeStripe", "tapeMap", "tapeClear", "noteGrid", "ticket", "clip"]
+    },
+    {
+      "file": "../MyZine素材/城市/ChatGPT 图像 2026年10月20日 19_44_58.png",
+      "kind": "texture", "name": "paper", "size": 1024, "quality": 80
+    }
+  ]
+}

@@ -43,6 +43,11 @@
       "root": "pkg-family",
       "name": "family",
       "pages": []
+    },
+    {
+      "root": "pkg-city",
+      "name": "city",
+      "pages": []
     }
   ],
   "window": {

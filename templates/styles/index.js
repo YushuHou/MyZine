@@ -20,6 +20,7 @@ module.exports = [].concat(
     require('./dog'),
     require('./couple'),
     require('./family'),
+    require('./city'),
     require('./nature'),
     require('./food'),
     require('./farm'),

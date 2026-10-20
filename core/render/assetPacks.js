@@ -9,7 +9,8 @@ const LOADERS = {
   cat: () => require.async('../../pkg-cat/assets.js'),
   dog: () => require.async('../../pkg-dog/assets.js'),
   couple: () => require.async('../../pkg-couple/assets.js'),
-  family: () => require.async('../../pkg-family/assets.js')
+  family: () => require.async('../../pkg-family/assets.js'),
+  city: () => require.async('../../pkg-city/assets.js')
 }
 
 const packs = {}

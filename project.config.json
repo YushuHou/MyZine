@@ -45,7 +45,8 @@
         "pkg-cat/**",
         "pkg-dog/**",
         "pkg-couple/**",
-        "pkg-family/**"
+        "pkg-family/**",
+        "pkg-city/**"
       ],
       "disablePlugins": [],
       "outputPath": ""
