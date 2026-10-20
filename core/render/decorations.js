@@ -7,7 +7,6 @@ const { drawOutline, drawHalftone } = require('./paperCraft')
 const { drawPlateRim, drawCornerDoodle, drawCheckerBorder, drawFenceBorder, drawRoute } = require('./themeDeco')
 const { fillPattern, drawPatternBand, drawPatternBlock } = require('./patterns')
 const { drawFrameStrip } = require('./paperBits')
-const { drawScrapbook } = require('./scrapbook')
 
 // 风格颜色：可写 colors 中的键名，也可直接写颜色值
 function colorOf(style, value, fallback) {
@@ -156,8 +155,6 @@ function drawDecoration(ctx, style, d, page, W, H, unit, images, bg) {
     drawPatternBand(ctx, style, d, page, W, H, unit, bg || style.colors.background)
   } else if (d.type === 'patternBlock') {
     drawPatternBlock(ctx, style, d, page, W, H, unit, bg || style.colors.background)
-  } else if (d.type === 'paperCollage') {
-    drawScrapbook(ctx, style, d, page, W, H, unit)
   } else if (d.type === 'airmailBorder') {
     drawAirmailBorder(ctx, style, d, page, W, H, unit)
   } else if (d.type === 'halftone') {
