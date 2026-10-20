@@ -69,6 +69,7 @@ pkg-beach/      分包：「大海沙滩」图片素材（贴纸、纸胶带、�
 pkg-snow/       分包：「冬日雪国」图片素材
 pkg-cat/        分包：「喵呜时光」图片素材
 pkg-dog/        分包：「小汪出游」图片素材
+pkg-couple/     分包：「心动旅程」图片素材
 dev/            分包（开发用，提审前移除）：素材与滤镜验证页、线稿与字形预览页
 scripts/        build-glyphs.py（生成字形数据）、build-stickers.py + packs/*.json（处理图片素材），均不进小程序包
 licenses/fonts/ OFL 授权全文（不进小程序包）
@@ -118,7 +119,7 @@ renderPage / renderSpread     背景（+ 纹样）→ 大装饰 → 色块 → �
 | `frameDecorations` | `tape`（加 `images` 用纸胶带图片）`frameSticker`（照片角贴纸，每跨页最多 1 张）`stamp`（`stickers` 时邮票里画贴纸） `postmark` `dateStamp` `outline` `plateRim` `cornerDoodle` `tornStrip`（照片角撕纸条，每跨页最多 1 条）；`largestOnly`、`layer: 'frame'` |
 | `decorations` | `rect` `line` `text` `perforation` `gutterLine` `halftone` `airmailBorder` `checkerBorder` `fenceBorder` `route` `patternBand`（纹样页边条）`patternBlock`（纹样色块）；`rect` 可加 `pattern`；`chance`、`mirror`、`pageTypes` |
 | `doodles` | 线稿：`names` `perSpread`（没有 `ornaments` 时的数量）`size` `colors` `lineWidth` `rotate` `avoid`。同一跨页不重复 |
-| `ornaments` | 跨页装饰计划（见 `core/render/ornaments.js` 文件头）：`big` 大装饰候选（`scenery` 剪影 / `pagePattern` 整页底纹 / `patternBand` / `patternBlock` / `deco` 任意页面装饰 / `wash` 水彩晕染 / `paperBand` 跨中缝撕纸色带 / `snowfall` 飘雪 / `pawTrail` 猫爪印小路，带 `weight`，放不下自动换下一个；`bigPerSpread` 每跨页几个）；`small` 小装饰类型（`doodle` / `seal` 方印 / `passport` 护照章 / `tornStrip` 撕纸条 / `luggageTag` 行李吊牌 / `sticker` 素材贴纸 / `note` 素材便签纸）；`smallPerSpread`，或 `smallByCoverage` 按照片覆盖率定数量；`tones` 跨页主色调；`stickerGroups` 贴纸主题组；`anchorChance` 贴纸贴在照片角上的比例；`pageTypes` |
+| `ornaments` | 跨页装饰计划（见 `core/render/ornaments.js` 文件头）：`big` 大装饰候选（`scenery` 剪影 / `pagePattern` 整页底纹 / `patternBand` / `patternBlock` / `deco` 任意页面装饰 / `wash` 水彩晕染 / `paperBand` 跨中缝撕纸色带 / `snowfall` 飘雪（`shape: 'heart'` 为飘落的小爱心）/ `pawTrail` 猫爪印小路，带 `weight`，放不下自动换下一个；`bigPerSpread` 每跨页几个）；`small` 小装饰类型（`doodle` / `seal` 方印 / `passport` 护照章 / `tornStrip` 撕纸条 / `luggageTag` 行李吊牌 / `sticker` 素材贴纸 / `note` 素材便签纸）；`smallPerSpread`，或 `smallByCoverage` 按照片覆盖率定数量；`tones` 跨页主色调；`stickerGroups` 贴纸主题组；`anchorChance` 贴纸贴在照片角上的比例；`pageTypes` |
 | `frameAccents` | 本页最大照片上的点睛装饰每跨页选一种：`{ postal: 1, sticker: 2 }`，对应照片框装饰的 `accent` 键，只出现在一页上 |
 | `wordPool` / `decoText` | 装饰词池（建议 20 个以上：整本书不重复，用完才重来）；`headline` `kicker` `greeting` `runningHeader` `index` 的内容和字体（`glyph: 'playfair' \| 'caveat' \| 'oswald'` 用字形路径）；`plate` 底牌、`dy` 下移 |
 | `stripPool` | 撕纸条短句（建议 20 条，整本书不重复），和「地点 · 日期」轮换 |

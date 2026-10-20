@@ -11,7 +11,7 @@
 //     { type: 'deco', deco: { …页面装饰… }, weight }                                          // 任意页面装饰（如格纹桌布页边）
 //     { type: 'wash', colors, alpha, size: [0.4, 0.6], weight }                                // 水彩晕染（衬在最大照片的一角下面）
 //     { type: 'paperBand', colors, mix, y, height, cover, weight }                              // 跨中缝撕纸色带（见 paperBand.js）
-//     { type: 'snowfall', density, flakes, size, weight }                                      // 飘雪（见 snowfall.js）
+//     { type: 'snowfall', density, flakes, size, shape: 'snow' | 'heart', color, weight }      // 飘雪 / 飘落的小爱心（见 snowfall.js）
 //     { type: 'pawTrail', size, stride, alpha, mix, y, weight }                                 // 横穿跨页的猫爪印小路（见 pawTrail.js）
 //   ],
 //   small: [{ type: 'doodle', weight }, { type: 'seal', size: [110, 150], color, weight }, { type: 'passport', size: [140, 180], count: [1, 3], colors, weight },

@@ -33,6 +33,11 @@
       "root": "pkg-dog",
       "name": "dog",
       "pages": []
+    },
+    {
+      "root": "pkg-couple",
+      "name": "couple",
+      "pages": []
     }
   ],
   "window": {

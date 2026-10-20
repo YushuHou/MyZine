@@ -43,7 +43,8 @@
         "pkg-beach/**",
         "pkg-snow/**",
         "pkg-cat/**",
-        "pkg-dog/**"
+        "pkg-dog/**",
+        "pkg-couple/**"
       ],
       "disablePlugins": [],
       "outputPath": ""

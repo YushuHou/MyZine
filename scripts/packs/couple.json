@@ -1,0 +1,32 @@
+{
+  "pack": "couple",
+  "out": "pkg-couple/assets.js",
+  "budgetKB": 1900,
+  "defaults": { "maxSide": 520, "outline": 12, "outlineClose": 10, "colors": 256 },
+  "sources": [
+    {
+      "file": "../MyZine素材/情侣/ChatGPT 图像 2026年10月20日 19_17_25.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["heartBalloons", "roses", "milkshakes", "rings", "giftBox", "loveLetter"]
+    },
+    {
+      "file": "../MyZine素材/情侣/ChatGPT 图像 2026年10月20日 19_20_53.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["iceCreams", "hotAirBalloon", "ferrisWheel", "camera", "picnicBasket", "heartCandle"]
+    },
+    {
+      "file": "../MyZine素材/情侣/ChatGPT 图像 2026年10月20日 19_22_01.png",
+      "kind": "sticker", "grid": [2, 3],
+      "names": ["bunnies", "lovebirds", "penguins", "bears", "swans", "kittens"]
+    },
+    {
+      "file": "../MyZine素材/情侣/ChatGPT 图像 2026年10月20日 19_23_07.png",
+      "kind": "paper", "grid": [2, 3], "maxSide": 640,
+      "names": ["tapeStripe", "tapeHeart", "tapePink", "noteGrid", "noteHeart", "clip"]
+    },
+    {
+      "file": "../MyZine素材/情侣/ChatGPT 图像 2026年10月20日 19_23_49.png",
+      "kind": "texture", "name": "paper", "size": 1024, "quality": 80
+    }
+  ]
+}
